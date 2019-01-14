@@ -57,10 +57,14 @@ namespace Tson.NET
             switch (format)
             {
                 case Formatting.None:
-                    return new TsonWriter().SerializeComplexTypeToTSON(input);
+                    return (!(input is IList))
+                        ? new TsonWriter().SerializeComplexTypeToTSON(TsonWriter.ObjectToDictionary.Convert(input, new List<object>()))
+                        : new TsonWriter().SerializeComplexTypeToTSON(input);
 
                 case Formatting.Indented:
-                    return TsonFormat.Format(new TsonWriter().SerializeComplexTypeToTSON(input));
+                    return (!(input is IList))
+                        ? TsonFormat.Format(new TsonWriter().SerializeComplexTypeToTSON(TsonWriter.ObjectToDictionary.Convert(input, new List<object>())))
+                        : TsonFormat.Format(new TsonWriter().SerializeComplexTypeToTSON(input));
             }
 
             throw new NotImplementedException();
@@ -124,8 +128,8 @@ namespace Tson.NET
 
             if (instance is IDictionary<string, object>)
             {
-                return ((IDictionary<string, object>)instance).Aggregate(new ExpandoObject() as IDictionary<string, object>,
-                                (a, p) => { a.Add(p.Key, p.Value); return a; });
+                return ((IDictionary<string, object>)instance)
+                    .Aggregate(new ExpandoObject() as IDictionary<string, object>, (a, p) => { a.Add(p.Key, p.Value); return a; });
             }
 
             return null;
@@ -337,7 +341,7 @@ namespace Tson.NET
             return null;
         }
         
-        private static class ObjectToDictionary
+        internal static class ObjectToDictionary
         {
             internal static object Convert(object input, List<object> stack)
             {
