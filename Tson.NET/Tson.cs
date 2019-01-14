@@ -79,7 +79,40 @@ namespace Tson.NET
                 return new TsonReader().Parse(input) as T;
             }
 
-            return TsonMapper<T>.FromDictionary(new TsonReader().Parse(input));
+            var instance = new TsonReader().Parse(input);
+
+            if (instance is IList)
+            {
+                var reference = ((List<object>)instance);
+
+                if (typeof(T).IsArray)
+                {
+                    var array = Array.CreateInstance(typeof(T).GetElementType(), reference.Count);
+
+                    for (var i = 0; i < reference.Count; i++)
+                        array.SetValue(TsonMapper<object>.RetrieveObject((Dictionary<string, object>)reference[i], typeof(T).GetElementType()), i);
+
+                    return (T)((object)array);
+                }
+
+                if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    var type = typeof(T).GetGenericArguments().First();
+                    var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(type));
+
+                    for (var i = 0; i < reference.Count; i++)
+                        list.Add(TsonMapper<object>.RetrieveObject((Dictionary<string, object>)reference[i], type));
+
+                    return (T)list;
+                }
+            }
+
+            if (instance is IDictionary)
+            {
+                return TsonMapper<T>.FromDictionary((Dictionary<string, object>)instance);
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -89,8 +122,9 @@ namespace Tson.NET
         /// <returns> The deserialized object from the TSON string. </returns>
         public static object DeserializeObject(string input)
         {
-            return (object)new TsonReader().Parse(input).Aggregate(new ExpandoObject() as IDictionary<string, object>,
-                            (a, p) => { a.Add(p.Key, p.Value); return a; });
+            //return (object)new TsonReader().Parse(input).Aggregate(new ExpandoObject() as IDictionary<string, object>,
+            //                (a, p) => { a.Add(p.Key, p.Value); return a; });
+            return null;
         }
     }
 
@@ -136,20 +170,48 @@ namespace Tson.NET
                     builder.Remove(builder.Length - 1, 1);
             }
 
-            var sb = new StringBuilder("{");
-
             if (complex is IDictionary || complex is IEnumerable<KeyValuePair<string, object>>)
             {
+                var sb = new StringBuilder("{");
+
                 SerializeDictionary(complex, sb);
+
+                sb.Append("}");
+
+                return sb.ToString();
             }
-            else
+            else if (complex is IList || complex is IEnumerable<object>)
             {
-                SerializeDictionary((Dictionary<string, object>)(ObjectToDictionary.Convert(complex, new List<object>())), sb);
+                var sb = new StringBuilder("[");
+                var items = ((List<object>)ObjectToDictionary.Convert(complex, new List<object>()));
+
+                for (var i = 0; i < items.Count; i++)
+                {
+                    var item = items[i];
+
+                    if (item is IDictionary)
+                    {
+                        sb.Append("{");
+                        SerializeDictionary(item, sb);
+                        sb.Append("}");
+                    }
+                    
+                    if (item is IList)
+                    {
+                        sb.Append("[");
+                        SerializeDictionary(item, sb);
+                        sb.Append("]");
+                    }
+
+                    if (i != items.Count - 1)
+                        sb.Append(",");
+                }
+
+                sb.Append("]");
+                return sb.ToString();
             }
 
-            sb.Append("}");
-
-            return sb.ToString();
+            return null;
         }
         
         private string SerializeObject(object input)
@@ -331,7 +393,6 @@ namespace Tson.NET
 
                                     CheckForSelfReferencingLoop(property);
 
-                                    stack.Add(input);
                                     dictionary.Add(property.Name, ObjectToDictionary.Convert(property.GetValue(input), stack));
                                     break;
                                 case MemberTypes.Field:
@@ -339,7 +400,6 @@ namespace Tson.NET
 
                                     CheckForSelfReferencingLoop(field);
 
-                                    stack.Add(input);
                                     dictionary.Add(field.Name, ObjectToDictionary.Convert(field.GetValue(input), stack));
                                     break;
                             }
@@ -348,6 +408,8 @@ namespace Tson.NET
                     }
                     else
                     {
+                        stack.Add(input);
+
                         return input;
                     }
 
@@ -374,11 +436,17 @@ namespace Tson.NET
 
         private StringReader StringReader;
 
-        public Dictionary<string, object> Parse(string input)
+        public object Parse(string input)
         {
             this.StringReader = new StringReader(Regex.Replace(input, @"(""(?:[^""\\]|\\.)*"")|\s+", "$1")); // remove whitespace
 
-            return this.DecodeObject();
+            if (this.StringReader.Peek() == '{')
+                return this.DecodeObject();
+
+            if (this.StringReader.Peek() == '[')
+                return this.DecodeArray();
+
+            return null;
         }
 
         private Dictionary<string, object> DecodeObject()
