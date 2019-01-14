@@ -52,7 +52,7 @@ namespace Tson.NET
         /// <returns>
         /// A TSON string representation of the object.
         /// </returns>
-        public static string SerializeObject(object input, Formatting format)
+        public static string SerializeObject(object input, Formatting format = Formatting.None)
         {
             switch (format)
             {
@@ -108,9 +108,7 @@ namespace Tson.NET
             }
 
             if (instance is IDictionary)
-            {
                 return TsonMapper<T>.FromDictionary((Dictionary<string, object>)instance);
-            }
 
             return null;
         }
@@ -122,8 +120,14 @@ namespace Tson.NET
         /// <returns> The deserialized object from the TSON string. </returns>
         public static object DeserializeObject(string input)
         {
-            //return (object)new TsonReader().Parse(input).Aggregate(new ExpandoObject() as IDictionary<string, object>,
-            //                (a, p) => { a.Add(p.Key, p.Value); return a; });
+            var instance = new TsonReader().Parse(input);
+
+            if (instance is IDictionary<string, object>)
+            {
+                return ((IDictionary<string, object>)instance).Aggregate(new ExpandoObject() as IDictionary<string, object>,
+                                (a, p) => { a.Add(p.Key, p.Value); return a; });
+            }
+
             return null;
         }
     }
@@ -818,10 +822,7 @@ namespace Tson.NET
 {
     internal static class TsonMapper<T>
     {
-        public static T FromDictionary(Dictionary<string, object> input)
-        {
-            return (T)RetrieveObject(input, typeof(T));
-        }
+        public static T FromDictionary(Dictionary<string, object> input) => (T)RetrieveObject(input, typeof(T));
 
         public static object RetrieveObject(Dictionary<string, object> input, Type type)
         {
@@ -874,4 +875,3 @@ namespace Tson.NET
         }
     }
 }
-
