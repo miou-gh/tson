@@ -135,7 +135,11 @@ namespace Tson.NET
 
             var type = input.GetType();
 
-            if (type.IsArray)
+            if (type == typeof(byte[]))
+            {
+                m_builder.Append("bytes").Append("(\"").Append(Convert.ToBase64String((byte[])input)).Append("\")");
+            }
+            else if (type.IsArray)
             {
                 this.SerializeArray(input);
             }
@@ -179,8 +183,6 @@ namespace Tson.NET
                 m_builder.Append("double").Append("(").Append(input).Append(")");
             else if (type == typeof(DateTime))
                 m_builder.Append("datetime").Append("(\"").Append(((DateTime)input).ToString("o")).Append("\")");
-            else if (type == typeof(byte[]))
-                m_builder.Append("bytes").Append("(\"").Append(Convert.ToBase64String((byte[])input)).Append("\")");
             else if (type.IsValueType)
                 this.SerializeObject(input);
             else if (type.IsClass)
@@ -457,7 +459,7 @@ namespace Tson.NET
                     break;
             }
 
-            var match = Regex.Match(keyword.ToString(), @"(\w+)\(([^)]+)\)");
+            var match = Regex.Match(keyword.ToString(), @"(\w+)\(([^()]+|[^(]+\([^)]*\)[^()]*)\)");
 
             var type = match.Groups[1].Value;
             var value = match.Groups[2].Value;
@@ -468,16 +470,13 @@ namespace Tson.NET
             switch (type)
             {
                 case "string":
-                    if (string.IsNullOrEmpty(value) || value.Length <= 2 || !(value[0] == '"' && (value[value.Length - 1] == '"')))
-                        return null;
-
                     return value.Remove(value.Length - 1, 1).Remove(0, 1);
 
                 case "int":
                     if (int.TryParse(value, out var @int))
                         return @int;
                     break;
-                    
+
                 case "uint":
                     if (uint.TryParse(value, out var @uint))
                         return @uint;
