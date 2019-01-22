@@ -32,7 +32,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using System.Linq.Expressions;
-using System.Dynamic;
 
 namespace Tson.NET
 {
@@ -41,7 +40,7 @@ namespace Tson.NET
         None,
         Indented
     }
-    
+
     public static class TsonConvert
     {
         /// <summary>
@@ -49,90 +48,45 @@ namespace Tson.NET
         /// </summary>
         /// <param name="value"> The object to serialize. </param>
         /// <param name="formatting"> Indicates how the output should be formatted. </param>
+        /// <param name="includePrivate"> Indicates whether to include private properties and members in serialization. </param>
         /// <returns>
         /// A TSON string representation of the object.
         /// </returns>
-        public static string SerializeObject(object input, Formatting format = Formatting.None)
+        public static string SerializeObject(object input, Formatting format = Formatting.None, bool includePrivate = false)
         {
+            var writer = new TsonWriter(includePrivate);
+            writer.SerializeValue(input);
+
             switch (format)
             {
                 case Formatting.None:
-                    return (!(input is IList))
-                        ? new TsonWriter().SerializeComplexTypeToTSON(TsonWriter.ObjectToDictionary.Convert(input, new List<object>()))
-                        : new TsonWriter().SerializeComplexTypeToTSON(input);
-
+                    return writer.GetTson();
                 case Formatting.Indented:
-                    return (!(input is IList))
-                        ? TsonFormat.Format(new TsonWriter().SerializeComplexTypeToTSON(TsonWriter.ObjectToDictionary.Convert(input, new List<object>())))
-                        : TsonFormat.Format(new TsonWriter().SerializeComplexTypeToTSON(input));
+                    return TsonFormat.Format(writer.GetTson());
+                default:
+                    throw new TsonException("The formatting specified is invalid.");
             }
-
-            throw new NotImplementedException();
         }
 
         /// <summary>
-        /// Deserializes the TSON to the specified .NET type.
+        /// Deserializes the TSON string into a dictionary.
+        /// </summary>
+        /// <param name="input"> The TSON to deserialize. </param>
+        /// <returns> A dictionary containing the deserialized items. </returns>
+        public static Dictionary<string, object> DeserializeObject(string input)
+        {
+            return new TsonReader().Parse(input) as Dictionary<string, object>;
+        }
+
+        /// <summary>
+        /// Deserializes the TSON string to the specified .NET type.
         /// </summary>
         /// <typeparam name="T"> The type of the object to deserialize to. </typeparam>
         /// <param name="value"> The TSON to deserialize. </param>
         /// <returns> The deserialized object from the TSON string. </returns>
-        public static T DeserializeObject<T>(string input) where T : class
+        public static T DeserializeObject<T>(string input)
         {
-            if (typeof(T) == typeof(Dictionary<string, object>))
-            {
-                return new TsonReader().Parse(input) as T;
-            }
-
-            var instance = new TsonReader().Parse(input);
-
-            if (instance is IList)
-            {
-                var reference = ((List<object>)instance);
-
-                if (typeof(T).IsArray)
-                {
-                    var array = Array.CreateInstance(typeof(T).GetElementType(), reference.Count);
-
-                    for (var i = 0; i < reference.Count; i++)
-                        array.SetValue(TsonMapper<object>.RetrieveObject((Dictionary<string, object>)reference[i], typeof(T).GetElementType()), i);
-
-                    return (T)((object)array);
-                }
-
-                if (typeof(T).IsGenericType && typeof(T).GetGenericTypeDefinition() == typeof(List<>))
-                {
-                    var type = typeof(T).GetGenericArguments().First();
-                    var list = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(type));
-
-                    for (var i = 0; i < reference.Count; i++)
-                        list.Add(TsonMapper<object>.RetrieveObject((Dictionary<string, object>)reference[i], type));
-
-                    return (T)list;
-                }
-            }
-
-            if (instance is IDictionary)
-                return TsonMapper<T>.FromDictionary((Dictionary<string, object>)instance);
-
-            return null;
-        }
-
-        /// <summary>
-        /// Deserializes the TSON to a .NET object.
-        /// </summary>
-        /// <param name="value"> The TSON to deserialize. </param>
-        /// <returns> The deserialized object from the TSON string. </returns>
-        public static object DeserializeObject(string input)
-        {
-            var instance = new TsonReader().Parse(input);
-
-            if (instance is IDictionary<string, object>)
-            {
-                return ((IDictionary<string, object>)instance)
-                    .Aggregate(new ExpandoObject() as IDictionary<string, object>, (a, p) => { a.Add(p.Key, p.Value); return a; });
-            }
-
-            return null;
+            return TsonMapper<T>.FromDictionary(new TsonReader().Parse(input) as Dictionary<string, object>);
         }
     }
 
@@ -152,278 +106,216 @@ namespace Tson.NET
 {
     internal class TsonWriter
     {
-        internal string SerializeComplexTypeToTSON(object complex)
+        private StringBuilder m_builder;
+        private BindingFlags m_memberFlags;
+        private bool m_includePrivateMembers;
+
+        internal string GetTson() => m_builder.ToString();
+
+        internal TsonWriter(bool includePrivateMembers = false)
         {
-            void SerializeDictionary(object input, StringBuilder builder)
-            {
-                IEnumerable<KeyValuePair<string, object>> kvps;
-
-                kvps = (input is IDictionary dict)
-                    ? dict.Keys.Cast<object>().Select(k => new KeyValuePair<string, object>(k.ToString(), dict[k]))
-                    : (IEnumerable<KeyValuePair<string, object>>)input;
-
-                var kvpList = kvps.ToList();
-                kvpList.Sort((e1, e2) => string.Compare(e1.Key, e2.Key, StringComparison.OrdinalIgnoreCase));
-
-                foreach (var kvp in kvpList)
-                {
-                    builder.Append(@"""");
-                    builder.Append(kvp.Key);
-                    builder.Append(@""":");
-                    builder.Append(this.SerializeObject(kvp.Value));
-                    builder.Append(",");
-                }
-
-                if (builder.Length > 0 && builder[builder.Length - 1] == ',')
-                    builder.Remove(builder.Length - 1, 1);
-            }
-
-            if (complex is IDictionary || complex is IEnumerable<KeyValuePair<string, object>>)
-            {
-                var sb = new StringBuilder("{");
-
-                SerializeDictionary(complex, sb);
-
-                sb.Append("}");
-
-                return sb.ToString();
-            }
-            else if (complex is IList || complex is IEnumerable<object>)
-            {
-                var sb = new StringBuilder("[");
-                var items = ((List<object>)ObjectToDictionary.Convert(complex, new List<object>()));
-
-                for (var i = 0; i < items.Count; i++)
-                {
-                    var item = items[i];
-
-                    if (item is IDictionary)
-                    {
-                        sb.Append("{");
-                        SerializeDictionary(item, sb);
-                        sb.Append("}");
-                    }
-                    
-                    if (item is IList)
-                    {
-                        sb.Append("[");
-                        SerializeDictionary(item, sb);
-                        sb.Append("]");
-                    }
-
-                    if (i != items.Count - 1)
-                        sb.Append(",");
-                }
-
-                sb.Append("]");
-                return sb.ToString();
-            }
-
-            return null;
+            m_builder = new StringBuilder();
+            m_includePrivateMembers = includePrivateMembers;
+            m_memberFlags =
+                BindingFlags.Instance |
+                BindingFlags.Public |
+                (m_includePrivateMembers ? BindingFlags.NonPublic : 0);
         }
-        
-        private string SerializeObject(object input)
+
+        private static bool IsGenericList(Type type) => type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>));
+        private static bool IsGenericDictionary(Type type) => type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Dictionary<,>));
+
+        public void SerializeValue(object input)
         {
             if (input == null)
-                return "null()";
-
-            string EscapeString(string src)
             {
-                var sb = new StringBuilder();
-
-                foreach (var c in src)
-                {
-                    if (c == '"' || c == '\\')
-                    {
-                        sb.Append('\\');
-                        sb.Append(c);
-                    }
-                    else if (c < 0x20) // control character
-                    {
-                        var u = (int)c;
-
-                        switch (u)
-                        {
-                            case '\b':
-                                sb.Append("\\b");
-                                break;
-                            case '\f':
-                                sb.Append("\\f");
-                                break;
-                            case '\n':
-                                sb.Append("\\n");
-                                break;
-                            case '\r':
-                                sb.Append("\\r");
-                                break;
-                            case '\t':
-                                sb.Append("\\t");
-                                break;
-                            default:
-                                sb.Append("\\u");
-                                sb.Append(u.ToString("X4", NumberFormatInfo.InvariantInfo));
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        sb.Append(c);
-                    }
-                }
-
-                return sb.ToString();
+                m_builder.Append("null()");
+                return;
             }
 
-            if (input is IList && !(input is IEnumerable<KeyValuePair<string, object>>))
+            var type = input.GetType();
+
+            if (type.IsArray)
             {
-                var list = (input as IList);
-                var builder = new StringBuilder("[");
-
-                if (list.Count > 0)
-                {
-                    builder.Append(string.Join(",", list.Cast<object>().Select(i => this.SerializeObject(i)).ToArray()));
-                }
-
-                builder.Append("]");
-                return builder.ToString();
+                this.SerializeArray(input);
             }
-
-            if (input is string)
+            else if (IsGenericList(type))
             {
-                return string.Format("string(\"{0}\")", EscapeString((string)input));
-            }
+                var elementType = type.GetGenericArguments()[0];
+                var castMethod = typeof(Enumerable).GetMethod("Cast").MakeGenericMethod(new System.Type[] { elementType });
+                var toArrayMethod = typeof(Enumerable).GetMethod("ToArray").MakeGenericMethod(new System.Type[] { elementType });
+                var castedObjectEnum = castMethod.Invoke(null, new object[] { input });
+                var castedObject = toArrayMethod.Invoke(null, new object[] { castedObjectEnum });
 
-            if (input is int)
+                this.SerializeArray(castedObject);
+            }
+            else if (type.IsEnum)
+                m_builder.Append("string").Append("(").Append(this.SerializeString(input.ToString())).Append(")");
+            else if (type == typeof(string))
+                m_builder.Append("string").Append("(").Append(this.SerializeString(input.ToString())).Append(")");
+            else if (type == typeof(char))
+                m_builder.Append("char").Append("(\"").Append(input).Append("\")");
+            else if (type == typeof(bool))
+                m_builder.Append("bool").Append("(").Append(((bool)input) ? "true" : "false").Append(")");
+            else if (type == typeof(int))
+                m_builder.Append("int").Append("(").Append(input).Append(")");
+            else if (type == typeof(byte))
+                m_builder.Append("byte").Append("(").Append(input).Append(")");
+            else if (type == typeof(sbyte))
+                m_builder.Append("sbyte").Append("(").Append(input).Append(")");
+            else if (type == typeof(short))
+                m_builder.Append("short").Append("(").Append(input).Append(")");
+            else if (type == typeof(ushort))
+                m_builder.Append("ushort").Append("(").Append(input).Append(")");
+            else if (type == typeof(uint))
+                m_builder.Append("uint").Append("(").Append(input).Append(")");
+            else if (type == typeof(long))
+                m_builder.Append("long").Append("(").Append(input).Append(")");
+            else if (type == typeof(ulong))
+                m_builder.Append("ulong").Append("(").Append(input).Append(")");
+            else if (type == typeof(float))
+                m_builder.Append("float").Append("(").Append(input).Append(")");
+            else if (type == typeof(double))
+                m_builder.Append("double").Append("(").Append(input).Append(")");
+            else if (type == typeof(DateTime))
+                m_builder.Append("datetime").Append("(\"").Append(((DateTime)input).ToString("o")).Append("\")");
+            else if (type == typeof(byte[]))
+                m_builder.Append("bytes").Append("(\"").Append(Convert.ToBase64String((byte[])input)).Append("\")");
+            else if (type.IsValueType)
+                this.SerializeObject(input);
+            else if (type.IsClass)
+                this.SerializeObject(input);
+            else
             {
-                return string.Format("int({0})", (int)input);
+                throw new InvalidOperationException($"Unable to serialize value to TSON - unsupported type '{ type.Name }'.");
             }
-
-            if (input is uint)
-            {
-                return string.Format("uint({0})", (uint)input);
-            }
-
-            if (input is long)
-            {
-                return string.Format("long({0})", (long)input);
-            }
-
-            if (input is float)
-            {
-                return string.Format("float({0})", (float)input);
-            }
-
-            if (input is double)
-            {
-                return string.Format("double({0})", (double)input);
-            }
-
-            if (input is bool)
-            {
-                return string.Format("bool({0})", (bool)input);
-            }
-
-            if (input is byte[])
-            {
-                return string.Format("bytes(\"{0}\")", Convert.ToBase64String((byte[])input));
-            }
-
-            if (input is DateTime)
-            {
-                return string.Format("datetime(\"{0}\")", ((DateTime)input).ToString("o"), CultureInfo.InvariantCulture);
-            }
-
-            if (input is Enum)
-            {
-                return string.Format("string(\"{0}\")", EscapeString(((Enum)input).ToString()));
-            }
-
-            return null;
         }
-        
-        internal static class ObjectToDictionary
+
+        private void SerializeArray(object input)
         {
-            internal static object Convert(object input, List<object> stack)
+            m_builder.Append("[");
+            var array = input as Array;
+            var first = true;
+
+            foreach (var element in array)
             {
-                var dictionary = new Dictionary<string, object>();
-                
-                if (input is IDictionary)
+                if (!first)
                 {
-                    foreach (KeyValuePair<object, object> kvp in (IDictionary)input)
-                    {
-                        dictionary.Add((string)kvp.Key, ObjectToDictionary.Convert(kvp.Value, stack));
-                    }
-
-                    return dictionary;
+                    m_builder.Append(",");
                 }
-                else if (input is IList || input.GetType().IsArray)
+
+                this.SerializeValue(element);
+                first = false;
+            }
+            m_builder.Append("]");
+        }
+
+        private string SerializeString(string input)
+        {
+            m_builder.Append('\"');
+
+            foreach (var c in input.ToCharArray())
+            {
+                switch (c)
                 {
-                    var items = new List<object>();
-
-                    foreach (var item in (IEnumerable)input)
-                    {
-                        items.Add(ObjectToDictionary.Convert(item, stack));
-                    }
-
-                    return items;
-                }
-                else
-                {
-                    if (!input.GetType().IsPrimitive && !(input is string) && !(input is DateTime))
-                    {
-                        var fields = input.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-                        var properties = input.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-                        void CheckForSelfReferencingLoop(MemberInfo member)
+                    case '"':
+                        m_builder.Append("\\\"");
+                        break;
+                    case '\\':
+                        m_builder.Append("\\\\");
+                        break;
+                    case '\b':
+                        m_builder.Append("\\b");
+                        break;
+                    case '\f':
+                        m_builder.Append("\\f");
+                        break;
+                    case '\n':
+                        m_builder.Append("\\n");
+                        break;
+                    case '\r':
+                        m_builder.Append("\\r");
+                        break;
+                    case '\t':
+                        m_builder.Append("\\t");
+                        break;
+                    default:
+                        var codepoint = Convert.ToInt32(c);
+                        if ((codepoint >= 32) && (codepoint <= 126))
                         {
-                            // check for self-referencing object
-                            if (stack.Contains(input))
-                            {
-                                var message = "Self referencing loop detected";
-
-                                if (member != null)
-                                {
-                                    message += string.Format(" for property '{0}'", member.Name);
-                                }
-
-                                message += string.Format(" with type '{0}'.", input.GetType());
-
-                                throw new TsonException(message);
-                            }
+                            m_builder.Append(c);
                         }
-
-                        foreach (var member in new List<MemberInfo>(fields).Union(properties))
+                        else
                         {
-                            switch (member.MemberType)
-                            {
-                                case MemberTypes.Property:
-                                    var property = ((PropertyInfo)member);
-
-                                    CheckForSelfReferencingLoop(property);
-
-                                    dictionary.Add(property.Name, ObjectToDictionary.Convert(property.GetValue(input), stack));
-                                    break;
-                                case MemberTypes.Field:
-                                    var field = ((FieldInfo)member);
-
-                                    CheckForSelfReferencingLoop(field);
-
-                                    dictionary.Add(field.Name, ObjectToDictionary.Convert(field.GetValue(input), stack));
-                                    break;
-                            }
-
+                            m_builder.Append("\\u");
+                            m_builder.Append(codepoint.ToString("x4"));
                         }
-                    }
-                    else
-                    {
-                        stack.Add(input);
-
-                        return input;
-                    }
-
-                    return dictionary;
+                        break;
                 }
             }
+
+            m_builder.Append('\"');
+            return "";
+        }
+
+        private void SerializeDictionary(IDictionary obj)
+        {
+            var first = true;
+            foreach (var key in obj.Keys)
+            {
+                if (!first)
+                {
+                    m_builder.Append(',');
+                }
+
+                this.SerializeString(key.ToString());
+                m_builder.Append(':');
+
+                this.SerializeValue(obj[key]);
+
+                first = false;
+            }
+        }
+
+        private void SerializeObject(object input)
+        {
+            m_builder.Append("{");
+
+            var first = true;
+
+            if (input is IDictionary input_as_dict)
+            {
+                this.SerializeDictionary(input_as_dict);
+            }
+            else
+            {
+                var fields = input.GetType().GetFields(m_memberFlags);
+                var properties = input.GetType().GetProperties(m_memberFlags);
+
+                foreach (var info in fields)
+                {
+                    if (info.IsStatic)
+                    {
+                        continue;
+                    }
+
+                    var fieldValue = info.GetValue(input);
+
+                    if (fieldValue != null)
+                    {
+                        if (!first)
+                        {
+                            m_builder.Append(",");
+                        }
+                        this.SerializeString(info.Name);
+                        m_builder.Append(":");
+                        this.SerializeValue(fieldValue);
+                        first = false;
+                    }
+                }
+            }
+
+            m_builder.Append("}");
         }
     }
 
@@ -556,7 +448,7 @@ namespace Tson.NET
             while ("{}[],:".IndexOf((char)this.StringReader.Peek()) == -1 || inside_string)
             {
                 var n = (char)this.StringReader.Read();
-                    keyword.Append(n);
+                keyword.Append(n);
 
                 if (n == '"')
                     inside_string = !inside_string;
@@ -576,21 +468,49 @@ namespace Tson.NET
             switch (type)
             {
                 case "string":
+                    if (string.IsNullOrEmpty(value) || value.Length <= 2 || !(value[0] == '"' && (value[value.Length - 1] == '"')))
+                        return null;
+
                     return value.Remove(value.Length - 1, 1).Remove(0, 1);
 
                 case "int":
                     if (int.TryParse(value, out var @int))
                         return @int;
                     break;
-
+                    
                 case "uint":
                     if (uint.TryParse(value, out var @uint))
                         return @uint;
                     break;
 
+                case "byte":
+                    if (byte.TryParse(value, out var @byte))
+                        return @byte;
+                    break;
+
+                case "sbyte":
+                    if (sbyte.TryParse(value, out var @sbyte))
+                        return @sbyte;
+                    break;
+
+                case "short":
+                    if (sbyte.TryParse(value, out var @short))
+                        return @short;
+                    break;
+
+                case "ushort":
+                    if (ushort.TryParse(value, out var @ushort))
+                        return @ushort;
+                    break;
+
                 case "long":
                     if (long.TryParse(value, out var @long))
                         return @long;
+                    break;
+
+                case "ulong":
+                    if (ulong.TryParse(value, out var @ulong))
+                        return @ulong;
                     break;
 
                 case "float":
@@ -607,6 +527,12 @@ namespace Tson.NET
                     if (bool.TryParse(value, out var @bool))
                         return @bool;
                     break;
+
+                case "char":
+                    if (string.IsNullOrEmpty(value) || value.Length <= 2 || !(value[0] == '"' && (value[value.Length - 1] == '"')))
+                        return null;
+
+                    return value.Remove(value.Length - 1, 1).Remove(0, 1).First();
 
                 case "bytes":
                     if (string.IsNullOrEmpty(value) || value.Length <= 2 || !(value[0] == '"' && (value[value.Length - 1] == '"')))
