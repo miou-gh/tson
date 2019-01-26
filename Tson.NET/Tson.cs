@@ -55,7 +55,7 @@ namespace Tson.NET
         public static string SerializeObject(object input, Formatting format = Formatting.None, bool includePrivate = false)
         {
             var writer = new TsonWriter(includePrivate);
-            writer.SerializeValue(input);
+                writer.SerializeValue(input);
 
             switch (format)
             {
@@ -307,13 +307,13 @@ namespace Tson.NET
             m_builder.Append("{");
 
             var first = true;
-            if (input is IDictionary<string, object> lol)
+            if (input is IDictionary<string, object> _1)
             {
-                this.SerializeDictionary(lol);
+                this.SerializeDictionary(_1);
             }
-            else if (input is IDictionary input_as_dict)
+            else if (input is IDictionary _2)
             {
-                this.SerializeDictionary(input_as_dict);
+                this.SerializeDictionary(_2);
             }
             else
             {
