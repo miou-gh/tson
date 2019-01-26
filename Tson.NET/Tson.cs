@@ -125,7 +125,7 @@ namespace Tson.NET
         private static bool IsGenericList(Type type) => type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>));
         private static bool IsGenericDictionary(Type type) => type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(Dictionary<,>));
 
-        public void SerializeValue(object input)
+        internal void SerializeValue(object input)
         {
             if (input == null)
             {
@@ -146,6 +146,16 @@ namespace Tson.NET
             else if (IsGenericList(type))
             {
                 var elementType = type.GetGenericArguments()[0];
+                var castMethod = typeof(Enumerable).GetMethod("Cast").MakeGenericMethod(new System.Type[] { elementType });
+                var toArrayMethod = typeof(Enumerable).GetMethod("ToArray").MakeGenericMethod(new System.Type[] { elementType });
+                var castedObjectEnum = castMethod.Invoke(null, new object[] { input });
+                var castedObject = toArrayMethod.Invoke(null, new object[] { castedObjectEnum });
+
+                this.SerializeArray(castedObject);
+            }
+            else if (typeof(IEnumerable<object>).IsAssignableFrom(type))
+            {
+                var elementType = typeof(object);
                 var castMethod = typeof(Enumerable).GetMethod("Cast").MakeGenericMethod(new System.Type[] { elementType });
                 var toArrayMethod = typeof(Enumerable).GetMethod("ToArray").MakeGenericMethod(new System.Type[] { elementType });
                 var castedObjectEnum = castMethod.Invoke(null, new object[] { input });
@@ -202,9 +212,7 @@ namespace Tson.NET
             foreach (var element in array)
             {
                 if (!first)
-                {
                     m_builder.Append(",");
-                }
 
                 this.SerializeValue(element);
                 first = false;
@@ -260,15 +268,30 @@ namespace Tson.NET
             return "";
         }
 
+        private void SerializeDictionary(IDictionary<string, object> obj)
+        {
+            var first = true;
+            foreach (var key in obj.Keys)
+            {
+                if (!first)
+                    m_builder.Append(',');
+
+                this.SerializeString(key.ToString());
+                m_builder.Append(':');
+
+                this.SerializeValue(obj[key]);
+
+                first = false;
+            }
+        }
+
         private void SerializeDictionary(IDictionary obj)
         {
             var first = true;
             foreach (var key in obj.Keys)
             {
                 if (!first)
-                {
                     m_builder.Append(',');
-                }
 
                 this.SerializeString(key.ToString());
                 m_builder.Append(':');
@@ -284,8 +307,11 @@ namespace Tson.NET
             m_builder.Append("{");
 
             var first = true;
-
-            if (input is IDictionary input_as_dict)
+            if (input is IDictionary<string, object> lol)
+            {
+                this.SerializeDictionary(lol);
+            }
+            else if (input is IDictionary input_as_dict)
             {
                 this.SerializeDictionary(input_as_dict);
             }
