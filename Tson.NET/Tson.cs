@@ -31,7 +31,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
-using System.Linq.Expressions;
 
 namespace Tson.NET
 {
@@ -73,29 +72,15 @@ namespace Tson.NET
         /// </summary>
         /// <param name="input"> The TSON to deserialize. </param>
         /// <returns> A dictionary containing the deserialized items. </returns>
-        public static Dictionary<string, object> DeserializeObject(string input)
-        {
-            return new TsonReader().Parse(input) as Dictionary<string, object>;
-        }
-
-        /// <summary>
-        /// Deserializes the TSON string to the specified .NET type.
-        /// </summary>
-        /// <typeparam name="T"> The type of the object to deserialize to. </typeparam>
-        /// <param name="value"> The TSON to deserialize. </param>
-        /// <returns> The deserialized object from the TSON string. </returns>
-        public static T DeserializeObject<T>(string input)
-        {
-            return TsonMapper<T>.FromDictionary(new TsonReader().Parse(input) as Dictionary<string, object>);
-        }
+        public static Dictionary<string, object> DeserializeObject(string input) => new TsonReader().Parse(input) as Dictionary<string, object>;
     }
 
     [Serializable]
     public class TsonException : Exception
     {
-        public TsonException() { }
-        public TsonException(string message) : base(message) { }
-        public TsonException(string message, Exception inner) : base(message, inner) { }
+        internal TsonException() { }
+        internal TsonException(string message) : base(message) { }
+        internal TsonException(string message, Exception inner) : base(message, inner) { }
     }
 }
 
@@ -198,9 +183,7 @@ namespace Tson.NET
             else if (type.IsClass)
                 this.SerializeObject(input);
             else
-            {
                 throw new InvalidOperationException($"Unable to serialize value to TSON - unsupported type '{ type.Name }'.");
-            }
         }
 
         private void SerializeArray(object input)
@@ -307,18 +290,20 @@ namespace Tson.NET
             m_builder.Append("{");
 
             var first = true;
-            if (input is IDictionary<string, object> _1)
+            if (input is IDictionary<string, object> string_object_dict)
             {
-                this.SerializeDictionary(_1);
+                this.SerializeDictionary(string_object_dict);
             }
-            else if (input is IDictionary _2)
+            else if (input is IDictionary non_generic_dict)
             {
-                this.SerializeDictionary(_2);
+                this.SerializeDictionary(non_generic_dict);
             }
             else
             {
                 var fields = input.GetType().GetFields(m_memberFlags);
                 var properties = input.GetType().GetProperties(m_memberFlags);
+
+                // TODO: A safety check to avoid infinite loops in self-referenced properties or fields.
 
                 foreach (var info in fields)
                 {
@@ -332,12 +317,27 @@ namespace Tson.NET
                     if (fieldValue != null)
                     {
                         if (!first)
-                        {
                             m_builder.Append(",");
-                        }
+
                         this.SerializeString(info.Name);
                         m_builder.Append(":");
                         this.SerializeValue(fieldValue);
+                        first = false;
+                    }
+                }
+
+                foreach (var property in properties)
+                {
+                    var propertyValue = property.GetValue(input);
+
+                    if (propertyValue != null)
+                    {
+                        if (!first)
+                            m_builder.Append(",");
+
+                        this.SerializeString(property.Name);
+                        m_builder.Append(":");
+                        this.SerializeValue(propertyValue);
                         first = false;
                     }
                 }
@@ -766,67 +766,6 @@ namespace Tson.NET
             {
                 action(i);
             }
-        }
-    }
-}
-
-/// <summary>
-/// TsonMapper
-/// </summary>
-namespace Tson.NET
-{
-    internal static class TsonMapper<T>
-    {
-        public static T FromDictionary(Dictionary<string, object> input) => (T)RetrieveObject(input, typeof(T));
-
-        public static object RetrieveObject(Dictionary<string, object> input, Type type)
-        {
-            var instance = Activator.CreateInstance(type);
-
-            foreach (var kvp in input)
-            {
-                var prop = type.GetProperty(kvp.Key);
-
-                if (prop == null)
-                    continue;
-
-                var value = kvp.Value;
-
-                if (value is Dictionary<string, object>)
-                    value = RetrieveObject((Dictionary<string, object>)value, prop.PropertyType);
-
-                prop.ExpressionSetGet().Invoke(instance, value);
-            }
-
-            return instance;
-        }
-    }
-
-    internal static class MemberExtensions
-    {
-        internal static Action<object, object> ExpressionSetGet(this PropertyInfo propertyInfo)
-        {
-            var _obj = typeof(object);
-
-            var setMethodInfo = propertyInfo.GetSetMethod(true);
-            var instance = Expression.Parameter(_obj, "instance");
-            var value = Expression.Parameter(_obj, "value");
-            var instanceCast = (!(propertyInfo.DeclaringType).GetTypeInfo().IsValueType) ? Expression.TypeAs(instance, propertyInfo.DeclaringType) : Expression.Convert(instance, propertyInfo.DeclaringType);
-            var valueCast = (!(propertyInfo.PropertyType).GetTypeInfo().IsValueType) ? Expression.TypeAs(value, propertyInfo.PropertyType) : Expression.Convert(value, propertyInfo.PropertyType);
-
-            return Expression.Lambda<Action<object, object>>(Expression.Call(instanceCast, setMethodInfo, valueCast), new ParameterExpression[] { instance, value }).Compile();
-        }
-
-        internal static Action<object, object> ExpressionSetGet(this FieldInfo fieldInfo)
-        {
-            var _obj = typeof(object);
-
-            var instance = Expression.Parameter(_obj, "instance");
-            var value = Expression.Parameter(_obj, "value");
-
-            return Expression.Lambda<Action<object, object>>(Expression.Assign(Expression.Field(
-                Expression.Convert(instance, fieldInfo.DeclaringType), fieldInfo),
-                Expression.Convert(value, fieldInfo.FieldType)), instance, value).Compile();
         }
     }
 }
