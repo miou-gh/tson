@@ -171,6 +171,11 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
+        static TextParser<Unit> TsonNullToken { get; } =
+            from open in Span.EqualTo("null(")
+            from close in Span.EqualTo(")")
+            select Unit.Value;
+
         // Like the string parser, the number version is permissive - it's just looking 
         // for a chunk of input that looks something like a JSON number, and not
         // necessarily a valid one.
@@ -222,6 +227,7 @@ namespace Tson
                 .Match(TsonFloatToken, TsonToken.Float)
                 .Match(TsonDoubleToken, TsonToken.Double)
                 .Match(TsonDateTimeToken, TsonToken.DateTime)
+                .Match(TsonNullToken, TsonToken.Null)
                 .Match(Identifier.CStyle, TsonToken.Identifier, requireDelimiters: true)
                 .Build();
     }

@@ -3,6 +3,18 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Version>3.0.1</Version>
+    <Company />
+    <Product />
+    <Authors>Atilla Lonny</Authors>
+    <Description>A format like JSON, except now with embedded types!</Description>
+    <Copyright>MIT</Copyright>
+    <PackageProjectUrl>https://github.com/atillabyte/tson</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/atillabyte/tson</RepositoryUrl>
+    <PackageTags>tson</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>3.0.1.0</AssemblyVersion>
+    <FileVersion>3.0.1.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

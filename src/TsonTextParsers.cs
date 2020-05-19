@@ -166,6 +166,10 @@ namespace Tson
             from close in Span.EqualTo(")")
             select chars[0] == 't' ? true : false;
 
+        public static TextParser<object> Null { get; } =
+            from open in Span.EqualTo("null()")
+            select (object)null;
+
         public static TextParser<char> Char { get; } =
             from open in Span.EqualTo("char(\"")
             from chars in Character.ExceptIn('"', '\\')

@@ -122,6 +122,11 @@ namespace Tson
                 .Apply(TsonTextParsers.DateTime)
                 .Select(n => (object)n);
 
+        static TokenListParser<TsonToken, object> TsonNull { get; } =
+            Token.EqualTo(TsonToken.Null)
+                .Apply(TsonTextParsers.Null)
+                .Select(n => (object)n);
+
         // The grammar is recursive - values can be objects, which contain
         // values, which can be objects... In order to reflect this circularity,
         // the parser below uses `Parse.Ref()` to refer lazily to the `TsonValue`
@@ -154,7 +159,7 @@ namespace Tson
         static TokenListParser<TsonToken, object> TsonFalse { get; } =
             Token.EqualToValue(TsonToken.Identifier, "false").Value((object)false);
 
-        static TokenListParser<TsonToken, object> TsonNull { get; } =
+        static TokenListParser<TsonToken, object> TsonLegacyNull { get; } =
             Token.EqualToValue(TsonToken.Identifier, "null").Value((object)null);
 
         static TokenListParser<TsonToken, object> TsonValue { get; } =
@@ -164,9 +169,9 @@ namespace Tson
                 .Or(TsonArray)
                 .Or(TsonTrue)
                 .Or(TsonFalse)
-                .Or(TsonNull)
-                .Or(TsonInteger)
+                .Or(TsonLegacyNull)
                 .Or(TsonString)
+                .Or(TsonInteger)
                 .Or(TsonDateTime)
                 .Or(TsonByteArray)
                 .Or(TsonUInteger)
@@ -180,6 +185,7 @@ namespace Tson
                 .Or(TsonULong)
                 .Or(TsonFloat)
                 .Or(TsonDouble)
+                .Or(TsonNull)
                 .Named("TSON value");
 
         static TokenListParser<TsonToken, object> TsonDocument { get; } = TsonValue.AtEnd();

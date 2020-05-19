@@ -83,6 +83,7 @@ namespace Tson
         Double,
         Float,
         DateTime,
+        Null,
 
         // Although TSON doesn't have an "identifier" or "keyword"
         // concept that groups `true`, `false`, and `null`, it's useful
@@ -91,6 +92,5 @@ namespace Tson
         // "unexpected identifier `false`", instead of failing at the
         // tokenization stage where all we'd have is "unexpected `l`".
         Identifier,
-
     }
 }
