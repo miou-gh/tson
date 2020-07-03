@@ -138,10 +138,10 @@ namespace Tson
                 .Named("property name")
                 .Then(name => Token.EqualTo(TsonToken.Colon)
                     .IgnoreThen(Parse.Ref(() => TsonValue)
-                    .Select(value => KeyValuePair.Create((string)name, value))))
+                    .Select(value => new KeyValuePair<string, object>((string)name, value))))
                 .ManyDelimitedBy(Token.EqualTo(TsonToken.Comma),
                     end: Token.EqualTo(TsonToken.RBracket))
-            select (object)new Dictionary<string, object>(properties);
+            select (object)properties.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         // `ManyDelimitedBy()` is a convenience helper for parsing lists that contain
         // separators. Specifying an `end` delimiter improves error reporting by enabling

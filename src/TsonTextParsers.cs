@@ -100,7 +100,7 @@ namespace Tson
             from open in Span.EqualTo("datetime(\"")
             from chars in Character.ExceptIn('"', '\\').Many()
             from close in Span.EqualTo("\")")
-            select System.DateTime.Parse(chars);
+            select System.DateTime.Parse(new string(chars));
 
         public static TextParser<string> String { get; } =
             from open in Span.EqualTo("string(\"")
