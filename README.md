@@ -2,7 +2,10 @@
 [![Nuget](https://img.shields.io/nuget/v/tson.svg)](https://www.nuget.org/packages/tson/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-### An example of serialized TSON.
+# Description
+TSON is a human-readable data interchange format with a syntax very similar to JSON. The key difference between them is that TSON preserves type information in an elegant fashion. The type literals are the same as you would find them in C# and are parsed as such.
+
+# Example
 ```js
 {
     "name": string("My Cool Adventure"),
@@ -13,10 +16,8 @@
     "created": datetime("2020-05-13T10:06:09.5137659-04:00")
 }
 ``` 
-
-### Usage
 ```cs
-// serialize an object into TSON.
+// serialize an object into a TSON string.
 var serialized = TsonConvert.Serialize(input, Formatting.Indented);
 
 // deserialize a TSON string into a Dictionary<string, object>
