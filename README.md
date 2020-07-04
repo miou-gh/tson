@@ -2,10 +2,6 @@
 [![Nuget](https://img.shields.io/nuget/v/tson.svg)](https://www.nuget.org/packages/tson/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-
-# tson
-A format like JSON, except now with embedded types!
-
 ### An example of serialized TSON.
 ```js
 {
