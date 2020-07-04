@@ -1,7 +1,6 @@
 # <img align="left" width="48" height="48" src="https://i.imgur.com/HS4N2PR.png" />tson
-[<img align="right" src="https://img.shields.io/nuget/v/tson.svg" />]("https://www.nuget.org/packages/tson/") <img align="right" src="https://img.shields.io/badge/license-MIT-blue.svg" />
-
-A format like JSON, except now with embedded types!
+[![Nuget](https://img.shields.io/nuget/v/tson.svg)](https://www.nuget.org/packages/tson/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 
 # tson
