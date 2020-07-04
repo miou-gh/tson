@@ -1,3 +1,9 @@
+# <img align="left" width="48" height="48" src="https://i.imgur.com/HS4N2PR.png" />tson
+<img align="right" src="https://img.shields.io/nuget/v/tson.svg" /> <img align="right" src="https://img.shields.io/badge/license-MIT-blue.svg" />
+
+A format like JSON, except now with embedded types!
+
+
 # tson
 A format like JSON, except now with embedded types!
 
@@ -43,5 +49,5 @@ var deserialized = TsonConvert.Deserialize(input);
   - [x] DateTime
   - [x] null
   
-### To-Do:
+### TODO:
 - [ ] Mapper (TSON -> Class)
