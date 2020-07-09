@@ -22,6 +22,9 @@ var serialized = TsonConvert.Serialize(input, Formatting.Indented);
 
 // deserialize a TSON string into a Dictionary<string, object>
 var deserialized = TsonConvert.Deserialize(input);
+
+// deserialize a TSON string into a class.
+var deserialized = TsonConvert.Deserialize<ShopItems>();
 ```
 
 ### Supported Types
@@ -44,6 +47,3 @@ var deserialized = TsonConvert.Deserialize(input);
   - [x] byte[]
   - [x] DateTime
   - [x] null
-  
-### TODO:
-- [ ] Mapper (TSON -> Class)
