@@ -27,6 +27,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using AutoMapper;
 
 namespace Tson
 {
@@ -80,7 +81,7 @@ namespace Tson
         }
 
         /// <summary>
-        /// Deserializes the TSON string into a dictionary.
+        /// Deserializes the TSON to a dictionary.
         /// </summary>
         /// <param name="input"> The TSON to deserialize. </param>
         /// <returns> A dictionary containing the deserialized items. </returns>
@@ -90,6 +91,23 @@ namespace Tson
                 throw new TsonException("Unable to deserialize object. " + error + " at line " + position.Line + ", column: " + position.Column);
 
             return (Dictionary<string, object>)value;
+        }
+
+        /// <summary>
+        /// Deserializes the TSON to the specified .NET type.
+        /// </summary>
+        /// <typeparam name="T"> The </typeparam>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static T DeserializeObject<T>(string input)
+        {
+            if (!TsonParser.TryParse(input, out var value, out var error, out var position))
+                throw new TsonException("Unable to deserialize object. " + error + " at line " + position.Line + ", column: " + position.Column);
+
+            var configuration = new MapperConfiguration(cfg => { });
+            var mapper = new Mapper(configuration);
+
+            return mapper.Map<T>(value);
         }
     }
 

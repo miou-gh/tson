@@ -140,16 +140,53 @@ namespace TsonUnitTests
     public class DeserializeTests
     {
         [Fact]
-        public void Test()
+        public void DeserializeToClass()
         {
-            if (!TsonParser.TryParse("{ \"a\": null() }", out var value, out var error, out var position))
-            {
-                ;
-            }
-            else
-            {
-                ;
-            }
+            var parent = new Faker<BlogPost>()
+               .RuleFor(bp => bp.Id, f => f.IndexFaker)
+               .RuleFor(bp => bp.Content, f => f.Lorem.Paragraphs())
+               .RuleFor(bp => bp.Created, f => f.Date.Past())
+               .RuleFor(bp => bp.IsActive, f => f.PickRandomParam(new bool[] { true, true, false }))
+               .RuleFor(bp => bp.MetaDescription, f => f.Lorem.Sentences(3))
+               .RuleFor(bp => bp.Keywords, f => string.Join(", ", f.Lorem.Words()))
+               .RuleFor(bp => bp.Title, f => f.Lorem.Sentence(10))
+               .RuleFor(bp => bp.AUint, f => f.Random.UInt())
+               .RuleFor(bp => bp.ALong, f => f.Random.Long())
+               .RuleFor(bp => bp.AULong, f => f.Random.ULong())
+               .RuleFor(bp => bp.AByteArray, f => f.Random.Bytes(100))
+               .RuleFor(bp => bp.AByte, f => f.Random.Byte())
+               .RuleFor(bp => bp.AFloat, f => f.Random.Float())
+               .RuleFor(bp => bp.AChar, f => f.Random.Char())
+               .RuleFor(bp => bp.ASByte, f => f.Random.SByte())
+               .RuleFor(bp => bp.AShort, f => f.Random.Short())
+               .RuleFor(bp => bp.AUShort, f => f.Random.UShort()).Generate();
+
+            parent.Children.Add(new Faker<BlogPost>()
+               .RuleFor(bp => bp.Id, f => f.IndexFaker)
+               .RuleFor(bp => bp.Content, f => f.Lorem.Paragraphs())
+               .RuleFor(bp => bp.Created, f => f.Date.Past())
+               .RuleFor(bp => bp.IsActive, f => f.PickRandomParam(new bool[] { true, true, false }))
+               .RuleFor(bp => bp.MetaDescription, f => f.Lorem.Sentences(3))
+               .RuleFor(bp => bp.Keywords, f => string.Join(", ", f.Lorem.Words()))
+               .RuleFor(bp => bp.Title, f => f.Lorem.Sentence(10))
+               .RuleFor(bp => bp.AUint, f => f.Random.UInt())
+               .RuleFor(bp => bp.ALong, f => f.Random.Long())
+               .RuleFor(bp => bp.AULong, f => f.Random.ULong())
+               .RuleFor(bp => bp.AByteArray, f => f.Random.Bytes(100))
+               .RuleFor(bp => bp.AByte, f => f.Random.Byte())
+               .RuleFor(bp => bp.AFloat, f => f.Random.Float())
+               .RuleFor(bp => bp.AChar, f => f.Random.Char())
+               .RuleFor(bp => bp.ASByte, f => f.Random.SByte())
+               .RuleFor(bp => bp.AShort, f => f.Random.Short())
+               .RuleFor(bp => bp.AUShort, f => f.Random.UShort()).Generate());
+
+            var as_tson = TsonConvert.SerializeObject(parent, Formatting.Indented);
+            var to_class = TsonConvert.DeserializeObject<BlogPost>(as_tson);
+            var back_to_tson = TsonConvert.SerializeObject(to_class, Formatting.Indented);
+
+            // TODO: The equality comparison doesn't work for some reason, so instead we'll compare TSON.
+            //Assert.Equal(parent, to_class);
+            Assert.True(as_tson == back_to_tson);
         }
 
         [Fact]
