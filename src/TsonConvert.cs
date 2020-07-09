@@ -36,10 +36,27 @@ namespace Tson
         Indented
     }
 
+    public class SerializationOptions
+    {
+        public SerializationOptions()
+        {
+        }
+
+        /// <summary>
+        /// Indicates whether to include private members (properties, fields) during serialization.
+        /// </summary>
+        public bool IncludePrivateMembers { get; set; }
+
+        /// <summary>
+        /// Indicates whether to include members whose values are <see langword="null"/> during serialization.
+        /// </summary>
+        public bool IncludeNullMembers { get; set; }
+    }
+
     public static class TsonConvert
     {
         /// <summary>
-        /// Serializes the specified object to a TSON string using formatting.
+        /// Serializes the specified object to a TSON string using the formatting specified.
         /// </summary>
         /// <param name="value"> The object to serialize. </param>
         /// <param name="formatting"> Indicates how the output should be formatted. </param>
@@ -47,9 +64,9 @@ namespace Tson
         /// <returns>
         /// A TSON string representation of the object.
         /// </returns>
-        public static string SerializeObject(object input, Formatting format = Formatting.None, bool includePrivate = false)
+        public static string SerializeObject(object input, Formatting format = Formatting.None, SerializationOptions options = null)
         {
-            var writer = new TsonWriter(includePrivate);
+            var writer = new TsonWriter(options ?? new SerializationOptions());
 
             switch (format)
             {
@@ -86,7 +103,7 @@ namespace Tson
 
     internal static class TsonValueMap
     {
-        public static Dictionary<Type, string> Dictionary = new Dictionary<Type, string>()
+        internal static Dictionary<Type, string> Dictionary = new Dictionary<Type, string>()
         {
             { typeof(string), "string" },   { typeof(byte[]), "bytes"  },   { typeof(char), "char"         },
             { typeof(bool),   "bool"   },   { typeof(int),    "int"    },   { typeof(byte), "byte"         },
@@ -95,34 +112,59 @@ namespace Tson
             { typeof(float),  "float"  },   { typeof(double), "double" },   { typeof(DateTime), "datetime" }
         };
 
-        public static string TypeToName(Type type) => Dictionary[type];
-        public static Type NameToType(string name) => Dictionary.First(n => n.Value == name).Key;
+        internal static string TypeToName(Type type) => Dictionary[type];
+        internal static Type NameToType(string name) => Dictionary.First(n => n.Value == name).Key;
     }
 
     internal class TsonWriter
     {
+        private SerializationOptions Options { get; }
         private BindingFlags MemberFlags { get; }
 
-        internal TsonWriter(bool includePrivateMembers) =>
-            this.MemberFlags = BindingFlags.Instance | BindingFlags.Public | (includePrivateMembers ? BindingFlags.NonPublic : 0);
+        internal TsonWriter(SerializationOptions options)
+        {
+            this.Options = options;
+            this.MemberFlags = BindingFlags.Instance | BindingFlags.Public | (options.IncludePrivateMembers ? BindingFlags.NonPublic : 0);
+        }
 
         internal string Serialize(object input) => this.SerializeValue(input);
 
-        private string SerializeValue(object value) =>
-            (TsonValueMap.Dictionary.ContainsKey(value.GetType())) ?
-            (new StringBuilder().Append(TsonValueMap.TypeToName(value.GetType())).Append("(").Append(
-                (value is string) ? this.EscapeString((string)value) :
-                (value is byte[]) ? this.EscapeString(Convert.ToBase64String((byte[])value)) :
-                (value is bool) ? ((bool)value ? "true" : "false") :
-                (value is char) ? this.EscapeString("" + value) :
-                (value is byte) ? (byte)value :
-                (value is sbyte) ? (sbyte)value :
-                (value is double) ? Math.Round((double)value, 10) :
-                (value is DateTime) ? this.EscapeString(((DateTime)value).ToString("o")) : value).Append(")").ToString())
-            :
-            this.CheckTypeIsArray(value.GetType()) ? this.SerializeArray(value as IEnumerable<object>) :
-            value.GetType().IsEnum ? string.Format("string({0})", this.EscapeString((string)value)) :
-            value.GetType().IsValueType || value.GetType().IsClass ? this.SerializeObject(value) : null;
+        private string SerializeValue(object value)
+        {
+            if (value is null && this.Options.IncludeNullMembers)
+                return "null()";
+
+            if (TsonValueMap.Dictionary.ContainsKey(value.GetType()))
+            {
+                return new StringBuilder().Append(TsonValueMap.TypeToName(value.GetType())).Append("(").Append(
+                    (value is string) ? this.EscapeString((string)value) :
+                    (value is byte[]) ? this.EscapeString(Convert.ToBase64String((byte[])value)) :
+                    (value is bool) ? ((bool)value ? "true" : "false") :
+                    (value is char) ? this.EscapeString("" + value) :
+                    (value is byte) ? (byte)value :
+                    (value is sbyte) ? (sbyte)value :
+                    (value is double) ? Math.Round((double)value, 10) :
+                    (value is DateTime) ? this.EscapeString(((DateTime)value).ToString("o")) : value).Append(")")
+                    .ToString();
+            }
+            else
+            {
+                if (this.CheckTypeIsArray(value.GetType()))
+                {
+                    return this.SerializeArray(value as IEnumerable<object>);
+                }
+                else
+                {
+                    if (value.GetType().IsEnum)
+                        return string.Format("string({0})", this.EscapeString((string)value));
+
+                    if (value.GetType().IsValueType || value.GetType().IsClass)
+                        return this.SerializeObject(value);
+                }
+
+                return null;
+            }
+        }
 
         private string SerializeObject(object input)
         {
