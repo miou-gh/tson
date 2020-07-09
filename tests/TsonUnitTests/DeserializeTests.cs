@@ -28,6 +28,10 @@ using Tson;
 using Xunit.Sdk;
 using System.Collections.Generic;
 using Bogus;
+using System.Buffers.Text;
+using System.Text;
+using System.Security.Cryptography.X509Certificates;
+using System.Diagnostics;
 
 namespace TsonUnitTests
 {
@@ -63,6 +67,26 @@ namespace TsonUnitTests
 
     public class SeriaizeTests
     {
+        [Fact]
+        public void SerializeNull()
+        {
+            var post = new BlogPost()
+            {
+                Id = 1234,
+                Content = "This is some content.",
+                Title = null
+            };
+
+            var serialized = TsonConvert.SerializeObject(post, Formatting.Indented, new SerializationOptions() { IncludeNullMembers = true });
+            var deserialized = TsonConvert.DeserializeObject(serialized);
+            var reserialized = TsonConvert.SerializeObject(deserialized, Formatting.Indented, new SerializationOptions() { IncludeNullMembers = true });
+
+            Debug.WriteLine(serialized);
+            Debug.WriteLine(reserialized);
+
+            Assert.True(serialized == reserialized, "The re-serialized TSON deserialized content is not the same.");
+        }
+
         [Fact]
         public void BogusBlog()
         {
@@ -115,6 +139,19 @@ namespace TsonUnitTests
 
     public class DeserializeTests
     {
+        [Fact]
+        public void Test()
+        {
+            if (!TsonParser.TryParse("{ \"a\": null() }", out var value, out var error, out var position))
+            {
+                ;
+            }
+            else
+            {
+                ;
+            }
+        }
+
         [Fact]
         public void String_Property()
         {
