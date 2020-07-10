@@ -24,8 +24,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel.Design;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -221,15 +219,18 @@ namespace Tson
                 {
                     var members = input_type
                         .GetProperties(this.MemberFlags).Where(p => p.GetIndexParameters().Length == 0)
-                        .Select(pi => (pi.Name, Value: pi.GetValue(input, null)))
-                        .Union(input_type.GetFields(this.MemberFlags).Select(fi => (fi.Name, Value: fi.GetValue(input))))
-                        .ToDictionary(ks => ks.Name, vs => vs.Value);
+                        .Select(pi => (pi.Name, Value: pi.GetValue(input, null), MemberAttributes: pi.GetCustomAttributes()))
+                        .Union(input_type.GetFields(this.MemberFlags).Select(fi => (fi.Name, Value: fi.GetValue(input), MemberAttributes: fi.GetCustomAttributes())));
 
                     var first_value = true;
-                    foreach (var item in members)
+                    foreach (var kvp in members)
                     {
-                        var name = item.Key;
-                        var value = item.Value;
+                        var (name, value, attributes) = kvp;
+
+                        var propertyNameAttribute = attributes.FirstOrDefault(att => att is TsonPropertyAttribute);
+
+                        if (propertyNameAttribute != null)
+                            name = (propertyNameAttribute as TsonPropertyAttribute).PropertyName;
 
                         if (value != null)
                         {
