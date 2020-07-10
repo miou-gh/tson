@@ -24,10 +24,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using AutoMapper;
+using AutoMapper.Internal;
 
 namespace Tson
 {
@@ -194,24 +197,50 @@ namespace Tson
             }
             else
             {
-                var memberValues = input.GetType().GetMembers(this.MemberFlags).ToList().Select(member =>
-                    (member.MemberType == MemberTypes.Field && !(member as FieldInfo).IsStatic) ? (member.Name, (member as FieldInfo).GetValue(input)) :
-                    (member.MemberType == MemberTypes.Property ? (member.Name, (member as PropertyInfo).GetValue(input)) : (null, null)));
+                var input_type = input.GetType();
 
-                var first_value = true;
-                foreach (var item in memberValues)
+                if (input_type.IsGenericType && input_type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
                 {
-                    var (name, value) = item;
+                    var keyType = input_type.GetGenericArguments()[0];
+                    var valueType = input_type.GetGenericArguments()[1];
 
-                    if (value != null)
+                    if (keyType == typeof(string))
                     {
-                        if (!first_value)
-                            builder.Append(",");
+                        var dictionary = new Dictionary<string, object>();
 
-                        builder.Append(this.EscapeString(name));
-                        builder.Append(":");
-                        builder.Append(this.SerializeValue(value));
-                        first_value = false;
+                        var keys = (input_type.GetFieldOrProperty("Keys").GetMemberValue(input) as IEnumerable<string>).ToArray();
+                        var values = (input_type.GetFieldOrProperty("Values").GetMemberValue(input) as IEnumerable<object>).ToArray();
+
+                        for (var i = 0; i < keys.Length; i++)
+                            dictionary.Add(keys[i], values[i]);
+
+                        builder.Append(this.SerializeDictionary(dictionary));
+                    }
+                }
+                else
+                {
+                    var members = input_type
+                        .GetProperties(this.MemberFlags).Where(p => p.GetIndexParameters().Length == 0)
+                        .Select(pi => (pi.Name, Value: pi.GetValue(input, null)))
+                        .Union(input_type.GetFields(this.MemberFlags).Select(fi => (fi.Name, Value: fi.GetValue(input))))
+                        .ToDictionary(ks => ks.Name, vs => vs.Value);
+
+                    var first_value = true;
+                    foreach (var item in members)
+                    {
+                        var name = item.Key;
+                        var value = item.Value;
+
+                        if (value != null)
+                        {
+                            if (!first_value)
+                                builder.Append(",");
+
+                            builder.Append(this.EscapeString(name));
+                            builder.Append(":");
+                            builder.Append(this.SerializeValue(value));
+                            first_value = false;
+                        }
                     }
                 }
             }
