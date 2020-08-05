@@ -124,6 +124,28 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select new string(chars);
 
+        public static TextParser<Uri> Uri { get; } =
+            from open in Span.EqualTo("uri(\"")
+            from chars in Character.ExceptIn('"', '\\')
+                .Or(Character.EqualTo('\\')
+                    .IgnoreThen(
+                        Character.EqualTo('\\')
+                        .Or(Character.EqualTo('"'))
+                        .Or(Character.EqualTo('/'))
+                        .Or(Character.EqualTo('b').Value('\b'))
+                        .Or(Character.EqualTo('f').Value('\f'))
+                        .Or(Character.EqualTo('n').Value('\n'))
+                        .Or(Character.EqualTo('r').Value('\r'))
+                        .Or(Character.EqualTo('t').Value('\t'))
+                        .Or(Character.EqualTo('u').IgnoreThen(
+                                Span.MatchedBy(Character.HexDigit.Repeat(4))
+                                    .Apply(Numerics.HexDigitsUInt32)
+                                    .Select(cc => (char)cc)))
+                        .Named("escape sequence")))
+                .Many()
+            from close in Span.EqualTo("\")")
+            select new Uri(new string(chars));
+
         public static TextParser<int> Integer { get; } =
             from open in Span.EqualTo("int(")
             from chars in Character.In(new[] { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' }).Many()

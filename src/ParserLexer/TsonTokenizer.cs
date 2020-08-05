@@ -77,6 +77,14 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
+        static TextParser<Unit> TsonUriToken { get; } =
+            from open in Span.EqualTo("uri(\"")
+            from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
+                .Or(Character.Except('"').Value(Unit.Value))
+                .IgnoreMany()
+            from close in Span.EqualTo("\")")
+            select Unit.Value;
+
         static TextParser<Unit> TsonStringToken { get; } =
             from open in Span.EqualTo("string(\"")
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
@@ -227,6 +235,7 @@ namespace Tson
                 .Match(TsonFloatToken, TsonToken.Float)
                 .Match(TsonDoubleToken, TsonToken.Double)
                 .Match(TsonDateTimeToken, TsonToken.DateTime)
+                .Match(TsonUriToken, TsonToken.Uri)
                 .Match(TsonNullToken, TsonToken.Null)
                 .Match(Identifier.CStyle, TsonToken.Identifier, requireDelimiters: true)
                 .Build();

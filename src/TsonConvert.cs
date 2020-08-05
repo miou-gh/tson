@@ -27,19 +27,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Mapster;
-using Mapster.Adapters;
-using MapsterMapper;
 
 namespace Tson
 {
+    /// <summary>
+    /// Specifies formatting options for TSON serialization.
+    /// </summary>
     public enum Formatting
     {
         None,
         Indented
     }
 
+    /// <summary>
+    /// Specifies the options for TSON serialization.
+    /// </summary>
     public class SerializationOptions
     {
         public SerializationOptions()
@@ -47,14 +52,29 @@ namespace Tson
         }
 
         /// <summary>
-        /// Indicates whether to include private members (properties, fields) during serialization.
+        /// Indicates whether to include non-public members during serialization.
         /// </summary>
-        public bool IncludePrivateMembers { get; set; }
+        public bool IncludeNonPublicMembers { get; set; }
 
         /// <summary>
         /// Indicates whether to include members whose values are <see langword="null"/> during serialization.
         /// </summary>
         public bool IncludeNullMembers { get; set; }
+    }
+
+    /// <summary>
+    /// Specifies the options for TSON deserialization.
+    /// </summary>
+    public class DeserializationOptions
+    {
+        public DeserializationOptions()
+        {
+        }
+
+        /// <summary>
+        /// Indicates whether to include non-public members during deserialization.
+        /// </summary>
+        public bool IncludeNonPublicMembers { get; set; }
     }
 
     public static class TsonConvert
@@ -107,12 +127,19 @@ namespace Tson
         /// <typeparam name="T"> The </typeparam>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static T DeserializeObject<T>(string input) where T : class
+        public static T DeserializeObject<T>(string input, DeserializationOptions options = null) where T : class
         {
             if (!TsonParser.TryParse(input, out var value, out var error, out var position))
                 throw new TsonException("Unable to deserialize object. " + error + " at line " + position.Line + ", column: " + position.Column);
 
-            return (value as IDictionary<string, object>).Adapt<T>();
+            if (options == null)
+                options = new DeserializationOptions();
+
+            var config = new TypeAdapterConfig();
+            config.ForType<IDictionary<string, object>, T>()
+                .EnableNonPublicMembers(options.IncludeNonPublicMembers);
+
+            return (value as IDictionary<string, object>).Adapt<T>(config);
         }
     }
 
@@ -147,7 +174,7 @@ namespace Tson
         internal TsonWriter(SerializationOptions options)
         {
             this.Options = options;
-            this.MemberFlags = BindingFlags.Instance | BindingFlags.Public | (options.IncludePrivateMembers ? BindingFlags.NonPublic : 0);
+            this.MemberFlags = BindingFlags.Instance | BindingFlags.Public | (options.IncludeNonPublicMembers ? BindingFlags.NonPublic : 0);
         }
 
         internal string Serialize(object input) => this.SerializeValue(input);
@@ -178,8 +205,11 @@ namespace Tson
                 }
                 else
                 {
+                    if (value is Uri)
+                        return string.Format("uri({0})", this.EscapeString((value as Uri).ToString()));
+
                     if (value.GetType().IsEnum)
-                        return string.Format("string({0})", this.EscapeString((string)value));
+                        return string.Format("string({0})", this.EscapeString(Convert.ToString(value)));
 
                     if (value.GetType().IsValueType || value.GetType().IsClass)
                         return this.SerializeObject(value);

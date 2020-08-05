@@ -122,6 +122,11 @@ namespace Tson
                 .Apply(TsonTextParsers.DateTime)
                 .Select(n => (object)n);
 
+        static TokenListParser<TsonToken, object> TsonUri { get; } =
+            Token.EqualTo(TsonToken.Uri)
+                .Apply(TsonTextParsers.Uri)
+                .Select(n => (object)n);
+
         static TokenListParser<TsonToken, object> TsonNull { get; } =
             Token.EqualTo(TsonToken.Null)
                 .Apply(TsonTextParsers.Null)
@@ -185,6 +190,7 @@ namespace Tson
                 .Or(TsonULong)
                 .Or(TsonFloat)
                 .Or(TsonDouble)
+                .Or(TsonUri)
                 .Or(TsonNull)
                 .Named("TSON value");
 

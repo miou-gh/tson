@@ -83,6 +83,7 @@ namespace Tson
         Double,
         Float,
         DateTime,
+        Uri,
         Null,
 
         // Although TSON doesn't have an "identifier" or "keyword"
