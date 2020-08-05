@@ -45,5 +45,6 @@ var deserialized = TsonConvert.Deserialize<ShopItems>();
   - [x] sbyte
   - [x] byte
   - [x] byte[]
-  - [x] DateTime
   - [x] null
+  - [x] DateTime
+  - [x] Uri
