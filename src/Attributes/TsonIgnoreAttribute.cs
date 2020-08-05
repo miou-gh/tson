@@ -30,7 +30,7 @@ namespace Tson
     /// Instructs the TsonWriter to avoid serializing the public field or public read/write property value. 
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-    sealed class TsonIgnoreAttribute : Attribute
+    public sealed class TsonIgnoreAttribute : Attribute
     {
         public TsonIgnoreAttribute()
         {

@@ -33,11 +33,6 @@ namespace Tson
 {
     public static class TsonConvert
     {
-        static TsonConvert()
-        {
-            TypeAdapterConfig.GlobalSettings.Default.IgnoreAttribute(typeof(TsonIgnoreAttribute));
-        }
-
         /// <summary>
         /// Serializes the specified object to a TSON string using the formatting specified.
         /// </summary>
@@ -91,7 +86,8 @@ namespace Tson
 
             var config = new TypeAdapterConfig();
             config.ForType<IDictionary<string, object>, T>()
-                .EnableNonPublicMembers(options.IncludeNonPublicMembers);
+                .EnableNonPublicMembers(options.IncludeNonPublicMembers)
+                .IgnoreAttribute(typeof(TsonIgnoreAttribute));
 
             return (value as IDictionary<string, object>).Adapt<T>(config);
         }
@@ -261,9 +257,13 @@ namespace Tson
                         var (name, value, attributes) = kvp;
 
                         var propertyNameAttribute = attributes.FirstOrDefault(att => att is TsonPropertyAttribute);
+                        var propertyIgnoreAttribute = attributes.FirstOrDefault(att => att is TsonIgnoreAttribute);
 
                         if (propertyNameAttribute != null)
                             name = (propertyNameAttribute as TsonPropertyAttribute).PropertyName;
+
+                        if (propertyIgnoreAttribute != null)
+                            continue;
 
                         if (value != null)
                         {
@@ -331,7 +331,10 @@ namespace Tson
         private string SerializeArray(IEnumerable<object> collection) => "[" + collection.Cast<object>().Aggregate(new StringBuilder(),
              (sb, v) => sb.Append(this.SerializeValue(v)).Append(","), sb => { if (0 < sb.Length) sb.Length--; return sb.ToString(); }) + "]";
 
-        private bool CheckTypeIsArray(Type type) => type.IsArray || (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>))) || typeof(IEnumerable<object>).IsAssignableFrom(type);
+        private bool CheckTypeIsArray(Type type) => 
+            type.IsArray ||
+            (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>))) ||
+            typeof(IEnumerable<object>).IsAssignableFrom(type);
     }
 
     internal static class TsonFormat
