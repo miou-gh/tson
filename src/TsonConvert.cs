@@ -25,58 +25,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
 using Mapster;
 
 namespace Tson
 {
-    /// <summary>
-    /// Specifies formatting options for TSON serialization.
-    /// </summary>
-    public enum Formatting
-    {
-        None,
-        Indented
-    }
-
-    /// <summary>
-    /// Specifies the options for TSON serialization.
-    /// </summary>
-    public class SerializationOptions
-    {
-        public SerializationOptions()
-        {
-        }
-
-        /// <summary>
-        /// Indicates whether to include non-public members during serialization.
-        /// </summary>
-        public bool IncludeNonPublicMembers { get; set; }
-
-        /// <summary>
-        /// Indicates whether to include members whose values are <see langword="null"/> during serialization.
-        /// </summary>
-        public bool IncludeNullMembers { get; set; }
-    }
-
-    /// <summary>
-    /// Specifies the options for TSON deserialization.
-    /// </summary>
-    public class DeserializationOptions
-    {
-        public DeserializationOptions()
-        {
-        }
-
-        /// <summary>
-        /// Indicates whether to include non-public members during deserialization.
-        /// </summary>
-        public bool IncludeNonPublicMembers { get; set; }
-    }
-
     public static class TsonConvert
     {
         static TsonConvert()
@@ -143,6 +97,50 @@ namespace Tson
         }
     }
 
+    /// <summary>
+    /// Specifies formatting options for TSON serialization.
+    /// </summary>
+    public enum Formatting
+    {
+        None,
+        Indented
+    }
+
+    /// <summary>
+    /// Specifies the options for TSON serialization.
+    /// </summary>
+    public class SerializationOptions
+    {
+        public SerializationOptions()
+        {
+        }
+
+        /// <summary>
+        /// Indicates whether to include non-public members during serialization.
+        /// </summary>
+        public bool IncludeNonPublicMembers { get; set; }
+
+        /// <summary>
+        /// Indicates whether to include members whose values are <see langword="null"/> during serialization.
+        /// </summary>
+        public bool IncludeNullMembers { get; set; }
+    }
+
+    /// <summary>
+    /// Specifies the options for TSON deserialization.
+    /// </summary>
+    public class DeserializationOptions
+    {
+        public DeserializationOptions()
+        {
+        }
+
+        /// <summary>
+        /// Indicates whether to include non-public members during deserialization.
+        /// </summary>
+        public bool IncludeNonPublicMembers { get; set; }
+    }
+
     [Serializable]
     public class TsonException : Exception
     {
@@ -159,7 +157,8 @@ namespace Tson
             { typeof(bool),   "bool"   },   { typeof(int),    "int"    },   { typeof(byte), "byte"         },
             { typeof(sbyte),  "sbyte"  },   { typeof(short),  "short"  },   { typeof(ushort), "ushort"     },
             { typeof(uint),   "uint"   },   { typeof(long),   "long"   },   { typeof(ulong), "ulong"       },
-            { typeof(float),  "float"  },   { typeof(double), "double" },   { typeof(DateTime), "datetime" }
+            { typeof(float),  "float"  },   { typeof(double), "double" },   { typeof(DateTime), "datetime" },
+            { typeof(Uri),    "uri" }
         };
 
         internal static string TypeToName(Type type) => Dictionary[type];
@@ -184,9 +183,11 @@ namespace Tson
             if (value is null && this.Options.IncludeNullMembers)
                 return "null()";
 
-            if (TsonValueMap.Dictionary.ContainsKey(value.GetType()))
+            var value_type = value.GetType();
+
+            if (TsonValueMap.Dictionary.ContainsKey(value_type))
             {
-                return new StringBuilder().Append(TsonValueMap.TypeToName(value.GetType())).Append("(").Append(
+                return new StringBuilder().Append(TsonValueMap.TypeToName(value_type)).Append("(").Append(
                     (value is string) ? this.EscapeString((string)value) :
                     (value is byte[]) ? this.EscapeString(Convert.ToBase64String((byte[])value)) :
                     (value is bool) ? ((bool)value ? "true" : "false") :
@@ -194,24 +195,22 @@ namespace Tson
                     (value is byte) ? (byte)value :
                     (value is sbyte) ? (sbyte)value :
                     (value is double) ? Math.Round((double)value, 10) :
+                    (value is Uri) ? this.EscapeString((value as Uri).ToString()) :
                     (value is DateTime) ? this.EscapeString(((DateTime)value).ToString("o")) : value).Append(")")
                     .ToString();
             }
             else
             {
-                if (this.CheckTypeIsArray(value.GetType()))
+                if (this.CheckTypeIsArray(value_type))
                 {
                     return this.SerializeArray(value as IEnumerable<object>);
                 }
                 else
                 {
-                    if (value is Uri)
-                        return string.Format("uri({0})", this.EscapeString((value as Uri).ToString()));
-
-                    if (value.GetType().IsEnum)
+                    if (value_type.IsEnum)
                         return string.Format("string({0})", this.EscapeString(Convert.ToString(value)));
 
-                    if (value.GetType().IsValueType || value.GetType().IsClass)
+                    if (value_type.IsValueType || value_type.IsClass)
                         return this.SerializeObject(value);
                 }
 
