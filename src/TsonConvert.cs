@@ -81,13 +81,23 @@ namespace Tson
             if (!TsonParser.TryParse(input, out var value, out var error, out var position))
                 throw new TsonException("Unable to deserialize object. " + error + " at line " + position.Line + ", column: " + position.Column);
 
+            
             if (options == null)
                 options = new DeserializationOptions();
 
             var config = new TypeAdapterConfig();
+
+            // ignore members which have the ignore attribute specified
             config.ForType<IDictionary<string, object>, T>()
-                .EnableNonPublicMembers(options.IncludeNonPublicMembers)
                 .IgnoreAttribute(typeof(TsonIgnoreAttribute));
+
+            if (options.IncludeNonPublicMembers)
+            {
+                // include members which are private
+                config.ForType<IDictionary<string, object>, T>()
+                    .IncludeMember((member, side) =>
+                        side == MemberSide.Destination && member.Info is PropertyInfo && member.AccessModifier == AccessModifier.Private);
+            }
 
             return (value as IDictionary<string, object>).Adapt<T>(config);
         }
