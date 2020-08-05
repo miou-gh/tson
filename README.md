@@ -30,7 +30,7 @@ var deserialized = TsonConvert.Deserialize<ShopItems>();
 ### Supported Types
 - [x] Object
 - [x] Array
-- [ ] Literals
+- [x] Literals
   - [x] string
   - [x] boolean
   - [x] int
