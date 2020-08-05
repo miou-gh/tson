@@ -25,10 +25,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using AutoMapper;
-using AutoMapper.Internal;
+using Mapster;
+using Mapster.Adapters;
+using MapsterMapper;
 
 namespace Tson
 {
@@ -57,6 +59,11 @@ namespace Tson
 
     public static class TsonConvert
     {
+        static TsonConvert()
+        {
+            TypeAdapterConfig.GlobalSettings.Default.IgnoreAttribute(typeof(TsonIgnoreAttribute));
+        }
+
         /// <summary>
         /// Serializes the specified object to a TSON string using the formatting specified.
         /// </summary>
@@ -100,15 +107,12 @@ namespace Tson
         /// <typeparam name="T"> The </typeparam>
         /// <param name="input"></param>
         /// <returns></returns>
-        public static T DeserializeObject<T>(string input)
+        public static T DeserializeObject<T>(string input) where T : class
         {
             if (!TsonParser.TryParse(input, out var value, out var error, out var position))
                 throw new TsonException("Unable to deserialize object. " + error + " at line " + position.Line + ", column: " + position.Column);
 
-            var configuration = new MapperConfiguration(cfg => { });
-            var mapper = new Mapper(configuration);
-
-            return mapper.Map<T>(value);
+            return (value as IDictionary<string, object>).Adapt<T>();
         }
     }
 
@@ -368,6 +372,44 @@ namespace Tson
         {
             foreach (var i in ie)
                 action(i);
+        }
+    }
+
+    public static class TypeExtension
+    {
+        public static MemberInfo GetFieldOrProperty(this Type type, string name)
+            => type.GetInheritedMember(name) ?? throw new ArgumentOutOfRangeException(nameof(name), $"Cannot find member {name} of type {type}.");
+
+        public static IEnumerable<MemberInfo> GetDeclaredMembers(this Type type) => type.GetTypeInfo().DeclaredMembers;
+
+        private static IEnumerable<MemberInfo> GetAllMembers(this Type type) =>
+            type.GetTypeInheritance().Concat(type.GetInterfaces()).SelectMany(i => i.GetDeclaredMembers());
+
+        public static IEnumerable<Type> GetTypeInheritance(this Type type)
+        {
+            yield return type;
+
+            var baseType = type.BaseType;
+            while (baseType != null)
+            {
+                yield return baseType;
+                baseType = baseType.BaseType;
+            }
+        }
+
+        public static MemberInfo GetInheritedMember(this Type type, string name) => type.GetAllMembers().FirstOrDefault(mi => mi.Name == name);
+
+        public static object GetMemberValue(this MemberInfo propertyOrField, object target)
+        {
+            if (propertyOrField is PropertyInfo property)
+            {
+                return property.GetValue(target, null);
+            }
+            if (propertyOrField is FieldInfo field)
+            {
+                return field.GetValue(target);
+            }
+            throw new ArgumentOutOfRangeException(nameof(propertyOrField), "Expected a property or field, not " + propertyOrField);
         }
     }
 }

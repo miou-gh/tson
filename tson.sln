@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tson", "src\Tson.csproj", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TsonUnitTests", "tests\TsonUnitTests\TsonUnitTests.csproj", "{8FD21FCD-1BBC-4469-8646-E89D092CD70C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TsonBenchmarks", "benchmarks\TsonBenchmarks\TsonBenchmarks.csproj", "{954306AD-21AF-40AD-900C-2BA3845365A8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{8FD21FCD-1BBC-4469-8646-E89D092CD70C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8FD21FCD-1BBC-4469-8646-E89D092CD70C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8FD21FCD-1BBC-4469-8646-E89D092CD70C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{954306AD-21AF-40AD-900C-2BA3845365A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{954306AD-21AF-40AD-900C-2BA3845365A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{954306AD-21AF-40AD-900C-2BA3845365A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{954306AD-21AF-40AD-900C-2BA3845365A8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

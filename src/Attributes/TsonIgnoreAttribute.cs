@@ -27,16 +27,13 @@ using System;
 namespace Tson
 {
     /// <summary>
-    /// Instructs the TsonWriter to always serialize the member with the specified name.
+    /// Instructs the TsonWriter to avoid serializing the public field or public read/write property value. 
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-    public sealed class TsonPropertyAttribute : Attribute
+    sealed class TsonIgnoreAttribute : Attribute
     {
-        public TsonPropertyAttribute(string propertyName)
+        public TsonIgnoreAttribute()
         {
-            this.PropertyName = propertyName;
         }
-
-        public string PropertyName { get; }
     }
 }
