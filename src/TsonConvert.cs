@@ -205,23 +205,17 @@ namespace Tson
                     (value is DateTime) ? this.EscapeString(((DateTime)value).ToString("o")) : value).Append(")")
                     .ToString();
             }
-            else
-            {
-                if (this.CheckTypeIsArray(value_type))
-                {
-                    return this.SerializeArray(value as IEnumerable<object>);
-                }
-                else
-                {
-                    if (value_type.IsEnum)
-                        return string.Format("string({0})", this.EscapeString(Convert.ToString(value)));
 
-                    if (value_type.IsValueType || value_type.IsClass)
-                        return this.SerializeObject(value);
-                }
+            if (this.CheckTypeIsArray(value_type))
+                return this.SerializeArray(value as IEnumerable<object>);
 
-                return null;
-            }
+            if (value_type.IsEnum)
+                return string.Format("string({0})", this.EscapeString(Convert.ToString(value)));
+
+            if (value_type.IsValueType || value_type.IsClass)
+                return this.SerializeObject(value);
+
+            return null;
         }
 
         private string SerializeObject(object input)

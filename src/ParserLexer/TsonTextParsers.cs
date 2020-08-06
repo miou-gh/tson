@@ -186,7 +186,7 @@ namespace Tson
             from open in Span.EqualTo("bool(")
             from chars in Character.ExceptIn(new[] { '(', ')' }).Many()
             from close in Span.EqualTo(")")
-            select chars[0] == 't' ? true : false;
+            select (chars[0] == 't');
 
         public static TextParser<object> Null { get; } =
             from open in Span.EqualTo("null()")
