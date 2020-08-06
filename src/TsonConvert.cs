@@ -38,7 +38,7 @@ namespace Tson
         /// </summary>
         /// <param name="value"> The object to serialize. </param>
         /// <param name="formatting"> Indicates how the output should be formatted. </param>
-        /// <param name="includePrivate"> Indicates whether to include private properties and members in serialization. </param>
+        /// <param name="options"> An optional configuration object for serialization. </param>
         /// <returns>
         /// A TSON string representation of the object.
         /// </returns>
@@ -72,10 +72,9 @@ namespace Tson
 
         /// <summary>
         /// Deserializes the TSON to the specified .NET type.
+        /// <param name="input"> The TSON to deserialize. </param>
+        /// <param name="options"> An optional configuration object for deserialization. </param>
         /// </summary>
-        /// <typeparam name="T"> The </typeparam>
-        /// <param name="input"></param>
-        /// <returns></returns>
         public static T DeserializeObject<T>(string input, DeserializationOptions options = null) where T : class
         {
             if (!TsonParser.TryParse(input, out var value, out var error, out var position))
