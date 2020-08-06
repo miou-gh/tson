@@ -34,7 +34,7 @@ namespace Tson
     // property is the place to start reading, but it has to be ordered below
     // the two "recognizers" that it depends upon, or else they'll be uninitialized
     // when we try to put the tokenizer together.
-    static class TsonTokenizer
+    internal static class TsonTokenizer
     {
         // This is a "recognizer" that matches - just like a regular expression would -
         // a block of input text that resembles a TSON string. Notice that it's very
@@ -61,7 +61,7 @@ namespace Tson
         //    that would allocate an array to return its value - `IgnoreMany()` just
         //    drops the items that it matches.
 
-        static TextParser<Unit> TsonPropertyStringToken { get; } =
+        private static TextParser<Unit> TsonPropertyStringToken { get; } =
             from open in Character.EqualTo('"')
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
@@ -69,7 +69,7 @@ namespace Tson
             from close in Character.EqualTo('"')
             select Unit.Value;
 
-        static TextParser<Unit> TsonByteArrayToken { get; } =
+        private static TextParser<Unit> TsonByteArrayToken { get; } =
             from open in Span.EqualTo("bytes(\"")
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
@@ -77,7 +77,7 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonUriToken { get; } =
+        private static TextParser<Unit> TsonUriToken { get; } =
             from open in Span.EqualTo("uri(\"")
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
@@ -85,7 +85,7 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonStringToken { get; } =
+        private static TextParser<Unit> TsonStringToken { get; } =
             from open in Span.EqualTo("string(\"")
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
@@ -93,25 +93,25 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonIntegerToken { get; } =
+        private static TextParser<Unit> TsonIntegerToken { get; } =
             from open in Span.EqualTo("int(")
             from content in Character.In(new[] { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' }).Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonUIntegerToken { get; } =
+        private static TextParser<Unit> TsonUIntegerToken { get; } =
             from open in Span.EqualTo("uint(")
             from content in Character.Digit.Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonBooleanToken { get; } =
+        private static TextParser<Unit> TsonBooleanToken { get; } =
             from open in Span.EqualTo("bool(")
             from content in Span.EqualTo("true").Or(Span.EqualTo("false")).Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonCharToken { get; } =
+        private static TextParser<Unit> TsonCharToken { get; } =
             from open in Span.EqualTo("char(\"")
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
@@ -119,43 +119,43 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonByteToken { get; } =
+        private static TextParser<Unit> TsonByteToken { get; } =
             from open in Span.EqualTo("byte(")
             from content in Character.In(new[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' }).Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonSByteToken { get; } =
+        private static TextParser<Unit> TsonSByteToken { get; } =
             from open in Span.EqualTo("sbyte(")
             from content in Character.In(new[] { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' }).Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonShortToken { get; } =
+        private static TextParser<Unit> TsonShortToken { get; } =
             from open in Span.EqualTo("short(")
             from content in Character.In(new[] { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' }).Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonUShortToken { get; } =
+        private static TextParser<Unit> TsonUShortToken { get; } =
             from open in Span.EqualTo("ushort(")
             from content in Character.Digit.Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonLongToken { get; } =
+        private static TextParser<Unit> TsonLongToken { get; } =
             from open in Span.EqualTo("long(")
             from content in Character.In(new[] { '-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' }).Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonULongToken { get; } =
+        private static TextParser<Unit> TsonULongToken { get; } =
             from open in Span.EqualTo("ulong(")
             from content in Character.Digit.Many().Value(Unit.Value).Try()
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonFloatToken { get; } =
+        private static TextParser<Unit> TsonFloatToken { get; } =
             from open in Span.EqualTo("float(")
             from sign in Character.EqualTo('-').OptionalOrDefault()
             from first in Character.Digit
@@ -163,7 +163,7 @@ namespace Tson
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonDoubleToken { get; } =
+        private static TextParser<Unit> TsonDoubleToken { get; } =
             from open in Span.EqualTo("double(")
             from sign in Character.EqualTo('-').OptionalOrDefault()
             from first in Character.Digit
@@ -171,7 +171,7 @@ namespace Tson
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonDateTimeToken { get; } =
+        private static TextParser<Unit> TsonDateTimeToken { get; } =
             from open in Span.EqualTo("datetime(\"")
             from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
@@ -179,15 +179,15 @@ namespace Tson
             from close in Span.EqualTo("\")")
             select Unit.Value;
 
-        static TextParser<Unit> TsonNullToken { get; } =
+        private static TextParser<Unit> TsonNullToken { get; } =
             from open in Span.EqualTo("null(")
             from close in Span.EqualTo(")")
             select Unit.Value;
 
-        // Like the string parser, the number version is permissive - it's just looking 
+        // Like the string parser, the number version is permissive - it's just looking
         // for a chunk of input that looks something like a JSON number, and not
         // necessarily a valid one.
-        static TextParser<Unit> LegacyNumberToken { get; } =
+        private static TextParser<Unit> LegacyNumberToken { get; } =
             from sign in Character.EqualTo('-').OptionalOrDefault()
             from first in Character.Digit
             from rest in Character.Digit.Or(Character.In('.', 'e', 'E', '+', '-')).IgnoreMany()

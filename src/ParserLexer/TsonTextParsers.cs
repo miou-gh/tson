@@ -33,7 +33,7 @@ namespace Tson
     // into a stream of tokens resembling `[LBracket, String("foo"), Colon, ...]`.
     //
     // From this point there are actually two jobs remaining to do.
-    // 
+    //
     // We'll need to assemble the structure of the TSON document, with arrays,
     // objects, and so-on, and we'll also have to decode strings and
     // numbers into their .NET representations - `string`s and `double`s.
@@ -42,7 +42,7 @@ namespace Tson
     // `TsonTextParsers` class contains two standalone character-driven parsers
     // that can handle the (non-trivial) string and number formats from
     // the TSON spec.
-    static class TsonTextParsers
+    internal static class TsonTextParsers
     {
         // Text parsers like these use the same `TextParser<T>` type that the
         // recognizers in the tokenizer use. This might get a little confusing,

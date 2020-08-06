@@ -50,8 +50,10 @@ namespace Tson
             {
                 case Formatting.None:
                     return writer.Serialize(input);
+
                 case Formatting.Indented:
                     return TsonFormat.Format(writer.Serialize(input));
+
                 default:
                     throw new TsonException("The formatting specified is invalid.");
             }
@@ -80,7 +82,6 @@ namespace Tson
             if (!TsonParser.TryParse(input, out var value, out var error, out var position))
                 throw new TsonException("Unable to deserialize object. " + error + " at line " + position.Line + ", column: " + position.Column);
 
-            
             if (options == null)
                 options = new DeserializationOptions();
 
@@ -149,9 +150,17 @@ namespace Tson
     [Serializable]
     public class TsonException : Exception
     {
-        internal TsonException() { }
-        internal TsonException(string message) : base(message) { }
-        internal TsonException(string message, Exception inner) : base(message, inner) { }
+        internal TsonException()
+        {
+        }
+
+        internal TsonException(string message) : base(message)
+        {
+        }
+
+        internal TsonException(string message, Exception inner) : base(message, inner)
+        {
+        }
     }
 
     internal static class TsonValueMap
@@ -167,6 +176,7 @@ namespace Tson
         };
 
         internal static string TypeToName(Type type) => Dictionary[type];
+
         internal static Type NameToType(string name) => Dictionary.First(n => n.Value == name).Key;
     }
 
@@ -262,11 +272,11 @@ namespace Tson
                         var propertyNameAttribute = attributes.FirstOrDefault(att => att is TsonPropertyAttribute);
                         var propertyIgnoreAttribute = attributes.FirstOrDefault(att => att is TsonIgnoreAttribute);
 
-                        if (propertyNameAttribute != null)
-                            name = (propertyNameAttribute as TsonPropertyAttribute).PropertyName;
-
                         if (propertyIgnoreAttribute != null)
                             continue;
+
+                        if (propertyNameAttribute != null)
+                            name = (propertyNameAttribute as TsonPropertyAttribute).PropertyName;
 
                         if (value != null)
                         {
@@ -334,7 +344,7 @@ namespace Tson
         private string SerializeArray(IEnumerable<object> collection) => "[" + collection.Cast<object>().Aggregate(new StringBuilder(),
              (sb, v) => sb.Append(this.SerializeValue(v)).Append(","), sb => { if (0 < sb.Length) sb.Length--; return sb.ToString(); }) + "]";
 
-        private bool CheckTypeIsArray(Type type) => 
+        private bool CheckTypeIsArray(Type type) =>
             type.IsArray ||
             (type.IsGenericType && (type.GetGenericTypeDefinition() == typeof(List<>))) ||
             typeof(IEnumerable<object>).IsAssignableFrom(type);
@@ -364,6 +374,7 @@ namespace Tson
                             Enumerable.Range(0, ++indent).ForEach(item => sb.Append(INDENT_STRING));
                         }
                         break;
+
                     case '}':
                     case ']':
                         if (!quoted)
@@ -373,6 +384,7 @@ namespace Tson
                         }
                         sb.Append(ch);
                         break;
+
                     case '"':
                         sb.Append(ch);
                         var escaped = false;
@@ -382,6 +394,7 @@ namespace Tson
                         if (!escaped)
                             quoted = !quoted;
                         break;
+
                     case ',':
                         sb.Append(ch);
                         if (!quoted)
@@ -390,11 +403,13 @@ namespace Tson
                             Enumerable.Range(0, indent).ForEach(item => sb.Append(INDENT_STRING));
                         }
                         break;
+
                     case ':':
                         sb.Append(ch);
                         if (!quoted)
                             sb.Append(" ");
                         break;
+
                     default:
                         sb.Append(ch);
                         break;

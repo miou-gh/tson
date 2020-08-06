@@ -37,97 +37,97 @@ namespace Tson
         // parser design that doesn't allow for variance, so you need
         // to create a parser that returns `object` here, even though
         // one that returns `string` should, in theory, be compatible.
-        static TokenListParser<TsonToken, object> TsonPropertyString { get; } =
+        private static TokenListParser<TsonToken, object> TsonPropertyString { get; } =
             Token.EqualTo(TsonToken.PropertyString)
                 .Apply(TsonTextParsers.PropertyString)
                 .Select(s => (object)s);
 
-        static TokenListParser<TsonToken, object> TsonByteArray { get; } =
+        private static TokenListParser<TsonToken, object> TsonByteArray { get; } =
             Token.EqualTo(TsonToken.ByteArray)
                 .Apply(TsonTextParsers.ByteArray)
                 .Select(s => (object)s);
 
-        static TokenListParser<TsonToken, object> TsonString { get; } =
+        private static TokenListParser<TsonToken, object> TsonString { get; } =
             Token.EqualTo(TsonToken.String)
                 .Apply(TsonTextParsers.String)
                 .Select(s => (object)s);
 
-        static TokenListParser<TsonToken, object> TsonInteger { get; } =
+        private static TokenListParser<TsonToken, object> TsonInteger { get; } =
             Token.EqualTo(TsonToken.Integer)
                 .Apply(TsonTextParsers.Integer)
                 .Select(s => (object)s);
 
-        static TokenListParser<TsonToken, object> TsonNumber { get; } =
+        private static TokenListParser<TsonToken, object> TsonNumber { get; } =
             Token.EqualTo(TsonToken.Number)
                 .Apply(TsonTextParsers.Number)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonUInteger { get; } =
+        private static TokenListParser<TsonToken, object> TsonUInteger { get; } =
             Token.EqualTo(TsonToken.UInteger)
                 .Apply(TsonTextParsers.UInteger)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonBoolean { get; } =
+        private static TokenListParser<TsonToken, object> TsonBoolean { get; } =
             Token.EqualTo(TsonToken.Boolean)
                 .Apply(TsonTextParsers.Boolean)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonCharacter { get; } =
+        private static TokenListParser<TsonToken, object> TsonCharacter { get; } =
             Token.EqualTo(TsonToken.Char)
                 .Apply(TsonTextParsers.Char)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonByte { get; } =
+        private static TokenListParser<TsonToken, object> TsonByte { get; } =
             Token.EqualTo(TsonToken.Byte)
                 .Apply(TsonTextParsers.Byte)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonSByte { get; } =
+        private static TokenListParser<TsonToken, object> TsonSByte { get; } =
             Token.EqualTo(TsonToken.SByte)
                 .Apply(TsonTextParsers.SByte)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonShort { get; } =
+        private static TokenListParser<TsonToken, object> TsonShort { get; } =
             Token.EqualTo(TsonToken.Short)
                 .Apply(TsonTextParsers.Short)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonUShort { get; } =
+        private static TokenListParser<TsonToken, object> TsonUShort { get; } =
             Token.EqualTo(TsonToken.UShort)
                 .Apply(TsonTextParsers.UShort)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonLong { get; } =
+        private static TokenListParser<TsonToken, object> TsonLong { get; } =
             Token.EqualTo(TsonToken.Long)
                 .Apply(TsonTextParsers.Long)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonULong { get; } =
+        private static TokenListParser<TsonToken, object> TsonULong { get; } =
             Token.EqualTo(TsonToken.ULong)
                 .Apply(TsonTextParsers.ULong)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonFloat { get; } =
+        private static TokenListParser<TsonToken, object> TsonFloat { get; } =
             Token.EqualTo(TsonToken.Float)
                 .Apply(TsonTextParsers.Float)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonDouble { get; } =
+        private static TokenListParser<TsonToken, object> TsonDouble { get; } =
             Token.EqualTo(TsonToken.Double)
                 .Apply(TsonTextParsers.Double)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonDateTime { get; } =
+        private static TokenListParser<TsonToken, object> TsonDateTime { get; } =
             Token.EqualTo(TsonToken.DateTime)
                 .Apply(TsonTextParsers.DateTime)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonUri { get; } =
+        private static TokenListParser<TsonToken, object> TsonUri { get; } =
             Token.EqualTo(TsonToken.Uri)
                 .Apply(TsonTextParsers.Uri)
                 .Select(n => (object)n);
 
-        static TokenListParser<TsonToken, object> TsonNull { get; } =
+        private static TokenListParser<TsonToken, object> TsonNull { get; } =
             Token.EqualTo(TsonToken.Null)
                 .Apply(TsonTextParsers.Null)
                 .Select(n => (object)n);
@@ -137,7 +137,7 @@ namespace Tson
         // the parser below uses `Parse.Ref()` to refer lazily to the `TsonValue`
         // parser, which won't be constructed until after the runtime initializes
         // the `TsonObject` parser.
-        static TokenListParser<TsonToken, object> TsonObject { get; } =
+        private static TokenListParser<TsonToken, object> TsonObject { get; } =
             from begin in Token.EqualTo(TsonToken.LBracket)
             from properties in TsonPropertyString
                 .Named("property name")
@@ -151,23 +151,23 @@ namespace Tson
         // `ManyDelimitedBy()` is a convenience helper for parsing lists that contain
         // separators. Specifying an `end` delimiter improves error reporting by enabling
         // expectations like "expected (item) or (close delimiter)" when no content matches.
-        static TokenListParser<TsonToken, object> TsonArray { get; } =
+        private static TokenListParser<TsonToken, object> TsonArray { get; } =
             from begin in Token.EqualTo(TsonToken.LSquareBracket)
             from values in Parse.Ref(() => TsonValue)
                 .ManyDelimitedBy(Token.EqualTo(TsonToken.Comma),
                     end: Token.EqualTo(TsonToken.RSquareBracket))
             select (object)values;
 
-        static TokenListParser<TsonToken, object> TsonTrue { get; } =
+        private static TokenListParser<TsonToken, object> TsonTrue { get; } =
             Token.EqualToValue(TsonToken.Identifier, "true").Value((object)true);
 
-        static TokenListParser<TsonToken, object> TsonFalse { get; } =
+        private static TokenListParser<TsonToken, object> TsonFalse { get; } =
             Token.EqualToValue(TsonToken.Identifier, "false").Value((object)false);
 
-        static TokenListParser<TsonToken, object> TsonLegacyNull { get; } =
+        private static TokenListParser<TsonToken, object> TsonLegacyNull { get; } =
             Token.EqualToValue(TsonToken.Identifier, "null").Value((object)null);
 
-        static TokenListParser<TsonToken, object> TsonValue { get; } =
+        private static TokenListParser<TsonToken, object> TsonValue { get; } =
             TsonPropertyString
                 .Or(TsonNumber)
                 .Or(TsonObject)
@@ -194,7 +194,7 @@ namespace Tson
                 .Or(TsonNull)
                 .Named("TSON value");
 
-        static TokenListParser<TsonToken, object> TsonDocument { get; } = TsonValue.AtEnd();
+        private static TokenListParser<TsonToken, object> TsonDocument { get; } = TsonValue.AtEnd();
 
         // `TryParse` is just a helper method. It's useful to write one of these, where
         // the tokenization and parsing phases remain distinct, because it's often very

@@ -27,7 +27,7 @@ using System;
 namespace Tson
 {
     /// <summary>
-    /// Instructs the TsonWriter to avoid serializing the public field or public read/write property value. 
+    /// Instructs the TsonWriter to avoid serializing the public field or public read/write property value.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
     public sealed class TsonIgnoreAttribute : Attribute

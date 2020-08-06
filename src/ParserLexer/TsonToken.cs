@@ -30,7 +30,7 @@ namespace Tson
     // The parser is token-based. This enum lists the various kinds
     // of element that make up a TSON document. The token kinds map very
     // closely to what you see in the boxes of the syntax diagrams.
-    enum TsonToken
+    internal enum TsonToken
     {
         // In general, it's better to be more, rather than less-specific
         // when it comes to choosing what kinds of tokens to generate,
