@@ -5,6 +5,9 @@
 # Description
 TSON is a human-readable data interchange format with a syntax very similar to JSON. The key difference between them is that TSON preserves type information in an elegant fashion. The type literals are the same as you would find them in C# and are parsed as such.
 
+TSON supports POCO serialization/deserialization. You can configure them using the `TsonProperty` and `TsonIgnore` attributes.
+A configuration object can also be passed in to the serialization and deserialization methods to, for example, include private members.
+
 # Example
 ```js
 {
