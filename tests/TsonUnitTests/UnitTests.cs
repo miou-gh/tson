@@ -23,15 +23,12 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 using System;
-using Xunit;
-using Tson;
-using Xunit.Sdk;
 using System.Collections.Generic;
-using Bogus;
-using System.Buffers.Text;
-using System.Text;
-using System.Security.Cryptography.X509Certificates;
 using System.Diagnostics;
+using Xunit;
+using Xunit.Sdk;
+using Bogus;
+using Tson;
 
 namespace TsonUnitTests
 {
@@ -43,7 +40,6 @@ namespace TsonUnitTests
         public string MetaDescription { get; set; }
         public string Keywords { get; set; }
         public bool IsActive { get; set; }
-        public DateTime Created { get; set; }
         public string AuthorId { get; set; }
         public uint AUint { get; set; }
         public long ALong { get; set; }
@@ -56,7 +52,8 @@ namespace TsonUnitTests
         public sbyte ASByte { get; set; }
         public short AShort { get; set; }
         public ushort AUShort { get; set; }
-
+        public Uri AUri { get; set; }
+        public DateTime Created { get; set; }
         public List<BlogPost> Children { get; set; }
 
         public BlogPost()
@@ -65,7 +62,7 @@ namespace TsonUnitTests
         }
     }
 
-    public class SeriaizeTests
+    public class SerializeTests
     {
         [Fact]
         public void SerializeNull()
@@ -108,6 +105,7 @@ namespace TsonUnitTests
                .RuleFor(bp => bp.AChar, f => f.Random.Char())
                .RuleFor(bp => bp.ASByte, f => f.Random.SByte())
                .RuleFor(bp => bp.AShort, f => f.Random.Short())
+               .RuleFor(bp => bp.AUri, f => new Uri("https://google.com"))
                .RuleFor(bp => bp.AUShort, f => f.Random.UShort()).Generate();
 
             parent.Children.Add(new Faker<BlogPost>()
@@ -127,6 +125,7 @@ namespace TsonUnitTests
                .RuleFor(bp => bp.AChar, f => f.Random.Char())
                .RuleFor(bp => bp.ASByte, f => f.Random.SByte())
                .RuleFor(bp => bp.AShort, f => f.Random.Short())
+               .RuleFor(bp => bp.AUri, f => new Uri("https://google.com"))
                .RuleFor(bp => bp.AUShort, f => f.Random.UShort()).Generate());
 
             var serialized = TsonConvert.SerializeObject(parent);
@@ -159,6 +158,7 @@ namespace TsonUnitTests
                .RuleFor(bp => bp.AChar, f => f.Random.Char())
                .RuleFor(bp => bp.ASByte, f => f.Random.SByte())
                .RuleFor(bp => bp.AShort, f => f.Random.Short())
+               .RuleFor(bp => bp.AUri, f => new Uri("https://google.com"))
                .RuleFor(bp => bp.AUShort, f => f.Random.UShort()).Generate();
 
             parent.Children.Add(new Faker<BlogPost>()
@@ -178,6 +178,7 @@ namespace TsonUnitTests
                .RuleFor(bp => bp.AChar, f => f.Random.Char())
                .RuleFor(bp => bp.ASByte, f => f.Random.SByte())
                .RuleFor(bp => bp.AShort, f => f.Random.Short())
+               .RuleFor(bp => bp.AUri, f => new Uri("https://google.com"))
                .RuleFor(bp => bp.AUShort, f => f.Random.UShort()).Generate());
 
             var as_tson = TsonConvert.SerializeObject(parent, Formatting.Indented);
@@ -347,6 +348,16 @@ namespace TsonUnitTests
 
             var dictionary = (value as Dictionary<string, object>);
             Assert.Equal((sbyte)-5, dictionary["a"]);
+        }
+
+        [Fact]
+        public void Uri_Property()
+        {
+            if (!TsonParser.TryParse("{ \"a\": uri(\"https://google.com\") }", out var value, out var error, out var _))
+                throw new XunitException(error);
+
+            var dictionary = (value as Dictionary<string, object>);
+            Assert.Equal(new Uri("https://google.com"), dictionary["a"] as Uri);
         }
     }
 }
