@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>3.2.4</Version>
+    <Version>3.3.0</Version>
     <Company />
     <Product />
     <Authors>Atilla Lonny</Authors>
@@ -13,13 +13,13 @@
     <RepositoryUrl>https://github.com/atillabyte/tson</RepositoryUrl>
     <PackageTags>tson</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>3.2.4.0</AssemblyVersion>
-    <FileVersion>3.2.4.0</FileVersion>
+    <AssemblyVersion>3.3.0.0</AssemblyVersion>
+    <FileVersion>3.3.0.0</FileVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mapster" Version="6.1.0" />
+    <PackageReference Include="Mapster" Version="6.1.1" />
     <PackageReference Include="Superpower" Version="2.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
   </ItemGroup>

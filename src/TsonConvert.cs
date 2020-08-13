@@ -87,9 +87,9 @@ namespace Tson
 
             var config = new TypeAdapterConfig();
 
-            // ignore members which have the ignore attribute specified
             config.ForType<IDictionary<string, object>, T>()
-                .IgnoreAttribute(typeof(TsonIgnoreAttribute));
+                .IgnoreAttribute(typeof(TsonIgnoreAttribute))  // ignore members which have the ignore attribute specified
+                .IgnoreNullValues(true); // inherit values from initialized automatic properties
 
             if (options.IncludeNonPublicMembers)
             {
