@@ -63,7 +63,7 @@ namespace Tson
 
         private static TextParser<Unit> TsonPropertyStringToken { get; } =
             from open in Character.EqualTo('"')
-            from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
+            from content in Character.EqualTo('\\').IgnoreThen(Character.AnyChar).Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
                 .IgnoreMany()
             from close in Character.EqualTo('"')
@@ -87,7 +87,7 @@ namespace Tson
 
         private static TextParser<Unit> TsonStringToken { get; } =
             from open in Span.EqualTo("string(\"")
-            from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
+            from content in Character.EqualTo('\\').IgnoreThen(Character.AnyChar).Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
                 .IgnoreMany()
             from close in Span.EqualTo("\")")
@@ -113,7 +113,7 @@ namespace Tson
 
         private static TextParser<Unit> TsonCharToken { get; } =
             from open in Span.EqualTo("char(\"")
-            from content in Span.EqualTo("\\\"").Value(Unit.Value).Try()
+            from content in Character.EqualTo('\\').IgnoreThen(Character.AnyChar).Value(Unit.Value).Try()
                 .Or(Character.Except('"').Value(Unit.Value))
                 .IgnoreMany()
             from close in Span.EqualTo("\")")
