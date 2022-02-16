@@ -319,7 +319,7 @@ namespace Tson
         {
             var builder = new StringBuilder().Append('\"');
 
-            foreach (var c in input.ToCharArray())
+            foreach (var c in input)
             {
                 switch (c)
                 {
