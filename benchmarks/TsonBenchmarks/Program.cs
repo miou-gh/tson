@@ -53,6 +53,7 @@ namespace TsonBenchmarks
         public string BasePeriod { get; set; }
     }
 
+    [MemoryDiagnoser]
     public class TsonVsNewtonsoftJson
     {
         private string json_string;
