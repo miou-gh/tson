@@ -3,10 +3,10 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 # Description
-TSON is a human-readable data interchange format with a syntax very similar to JSON. The key difference between them is that TSON preserves type information in an elegant fashion. The type literals are the same as you would find them in C# and are parsed as such.
+TSON is a human-readable data interchange format with a syntax similar to JSON. TSON preserves type information for every value.
 
 TSON supports POCO serialization/deserialization. You can configure them using the `TsonProperty` and `TsonIgnore` attributes.
-A configuration object can also be passed in to the serialization and deserialization methods to, for example, include private members.
+A configuration object can also be passed in to the serialization and deserialization methods. Common usage example: To include private members during serialization.
 
 # Example
 ```js
@@ -35,7 +35,7 @@ var deserialized = TsonConvert.Deserialize<ShopItems>();
 - [x] Array
 - [x] Literals
   - [x] string
-  - [x] boolean
+  - [x] bool
   - [x] int
   - [x] uint
   - [x] long
@@ -47,7 +47,7 @@ var deserialized = TsonConvert.Deserialize<ShopItems>();
   - [x] double
   - [x] sbyte
   - [x] byte
-  - [x] byte[]
+  - [x] bytes
   - [x] null
-  - [x] DateTime
-  - [x] Uri
+  - [x] datetime
+  - [x] uri
